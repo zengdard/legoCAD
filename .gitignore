@@ -1,0 +1,26 @@
+# bibliothèque LDraw officielle (~615 Mo, CC BY 4.0) : à télécharger
+# séparément — https://library.ldraw.org
+ldraw/
+
+# artefacts de génération
+out/
+renders/*
+!renders/chateau_llm.png
+!renders/voiture_llm.png
+!renders/cabane_solver.png
+
+# caches dérivés (régénérés par tools/parts_index.py / build_catalog.py)
+parts_index_cache.json
+
+# modèles de test internes
+models/_*
+
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# environnements outils
+.v2c/
+.video_agent/
+.zcode/
+.mimosa/

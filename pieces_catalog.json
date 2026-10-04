@@ -1,0 +1,837 @@
+{
+ "colors": {
+  "0": {
+   "name": "Black",
+   "hex": "#05131D"
+  },
+  "1": {
+   "name": "Blue",
+   "hex": "#0055BF"
+  },
+  "2": {
+   "name": "Green",
+   "hex": "#237841"
+  },
+  "3": {
+   "name": "Dark Turquoise",
+   "hex": "#00838F"
+  },
+  "4": {
+   "name": "Red",
+   "hex": "#C91A09"
+  },
+  "5": {
+   "name": "Dark Pink",
+   "hex": "#C870A0"
+  },
+  "6": {
+   "name": "Brown",
+   "hex": "#583927"
+  },
+  "7": {
+   "name": "Light Gray",
+   "hex": "#9BA19D"
+  },
+  "8": {
+   "name": "Dark Gray",
+   "hex": "#6D6E5C"
+  },
+  "14": {
+   "name": "Yellow",
+   "hex": "#F2CD37"
+  },
+  "15": {
+   "name": "White",
+   "hex": "#FFFFFF"
+  },
+  "16": {
+   "name": "(main color)",
+   "hex": "#B4B4B4"
+  },
+  "17": {
+   "name": "Light Green",
+   "hex": "#A5CA18"
+  },
+  "18": {
+   "name": "Light Yellow",
+   "hex": "#FFCF0A"
+  },
+  "19": {
+   "name": "Tan",
+   "hex": "#E4CD9E"
+  },
+  "22": {
+   "name": "Purple",
+   "hex": "#81007B"
+  },
+  "25": {
+   "name": "Orange",
+   "hex": "#FE8A18"
+  },
+  "27": {
+   "name": "Lime",
+   "hex": "#BBE90B"
+  },
+  "28": {
+   "name": "Dark Tan",
+   "hex": "#958A73"
+  },
+  "29": {
+   "name": "Bright Pink",
+   "hex": "#E4ADC8"
+  },
+  "36": {
+   "name": "Trans Red",
+   "hex": "#C91A09",
+   "translucent": true
+  },
+  "37": {
+   "name": "Trans Neon Orange",
+   "hex": "#FCAC00",
+   "translucent": true
+  },
+  "43": {
+   "name": "Trans Light Blue",
+   "hex": "#A0EEF7",
+   "translucent": true
+  },
+  "47": {
+   "name": "Trans Clear",
+   "hex": "#FCFCFC",
+   "translucent": true
+  },
+  "70": {
+   "name": "Reddish Brown",
+   "hex": "#582A12"
+  },
+  "71": {
+   "name": "Light Bluish Gray",
+   "hex": "#A0A5A9"
+  },
+  "72": {
+   "name": "Dark Bluish Gray",
+   "hex": "#6C6E68"
+  },
+  "73": {
+   "name": "Medium Bluish Gray",
+   "hex": "#8A928D"
+  },
+  "84": {
+   "name": "Medium Nougat",
+   "hex": "#AA7D55"
+  },
+  "191": {
+   "name": "Bright Light Orange",
+   "hex": "#F8BB3D"
+  },
+  "226": {
+   "name": "Bright Light Yellow",
+   "hex": "#FFF03A"
+  },
+  "272": {
+   "name": "Dark Blue",
+   "hex": "#0A3463"
+  },
+  "288": {
+   "name": "Dark Green",
+   "hex": "#184632"
+  },
+  "308": {
+   "name": "Dark Brown",
+   "hex": "#352100"
+  },
+  "320": {
+   "name": "Dark Red",
+   "hex": "#720E0F"
+  },
+  "321": {
+   "name": "Dark Azure",
+   "hex": "#469BC3"
+  },
+  "322": {
+   "name": "Medium Azure",
+   "hex": "#69BBD5"
+  },
+  "323": {
+   "name": "Light Aqua",
+   "hex": "#DCFFFB"
+  },
+  "378": {
+   "name": "Sand Green",
+   "hex": "#A0BCAC"
+  },
+  "484": {
+   "name": "Very Light Orange",
+   "hex": "#FFA70C"
+  },
+  "503": {
+   "name": "Very Light Gray",
+   "hex": "#E6E3DA"
+  }
+ },
+ "parts": {
+  "3005": {
+   "id": "3005",
+   "desc": "Brick 1 x 1",
+   "bbox_ldu": [
+    20,
+    28,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3004": {
+   "id": "3004",
+   "desc": "Brick 1 x 2",
+   "bbox_ldu": [
+    40,
+    28,
+    20
+   ],
+   "studs_x": 2.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3622": {
+   "id": "3622",
+   "desc": "Brick 1 x 3",
+   "bbox_ldu": [
+    60,
+    28,
+    20
+   ],
+   "studs_x": 3.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3010": {
+   "id": "3010",
+   "desc": "Brick 1 x 4",
+   "bbox_ldu": [
+    80,
+    28,
+    20
+   ],
+   "studs_x": 4.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3009": {
+   "id": "3009",
+   "desc": "Brick 1 x 6",
+   "bbox_ldu": [
+    120,
+    28,
+    20
+   ],
+   "studs_x": 6.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3008": {
+   "id": "3008",
+   "desc": "Brick 1 x 8",
+   "bbox_ldu": [
+    160,
+    28,
+    20
+   ],
+   "studs_x": 8.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3002": {
+   "id": "3002",
+   "desc": "Brick 2 x 3",
+   "bbox_ldu": [
+    60,
+    28,
+    40
+   ],
+   "studs_x": 3.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3003": {
+   "id": "3003",
+   "desc": "Brick 2 x 2",
+   "bbox_ldu": [
+    40,
+    28,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3001": {
+   "id": "3001",
+   "desc": "Brick 2 x 4",
+   "bbox_ldu": [
+    80,
+    28,
+    40
+   ],
+   "studs_x": 4.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "2456": {
+   "id": "2456",
+   "desc": "Brick 2 x 6",
+   "bbox_ldu": [
+    120,
+    28,
+    40
+   ],
+   "studs_x": 6.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3007": {
+   "id": "3007",
+   "desc": "Brick 2 x 8",
+   "bbox_ldu": [
+    160,
+    28,
+    40
+   ],
+   "studs_x": 8.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3024": {
+   "id": "3024",
+   "desc": "Plate 1 x 1",
+   "bbox_ldu": [
+    20,
+    12,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3023": {
+   "id": "3023",
+   "desc": "~Moved to 3023b",
+   "bbox_ldu": [
+    40,
+    12,
+    20
+   ],
+   "studs_x": 2.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3623": {
+   "id": "3623",
+   "desc": "Plate 1 x 3",
+   "bbox_ldu": [
+    60,
+    12,
+    20
+   ],
+   "studs_x": 3.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3710": {
+   "id": "3710",
+   "desc": "Plate 1 x 4",
+   "bbox_ldu": [
+    80,
+    12,
+    20
+   ],
+   "studs_x": 4.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3666": {
+   "id": "3666",
+   "desc": "Plate 1 x 6",
+   "bbox_ldu": [
+    120,
+    12,
+    20
+   ],
+   "studs_x": 6.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3460": {
+   "id": "3460",
+   "desc": "Plate 1 x 8",
+   "bbox_ldu": [
+    160,
+    12,
+    20
+   ],
+   "studs_x": 8.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3022": {
+   "id": "3022",
+   "desc": "Plate 2 x 2",
+   "bbox_ldu": [
+    40,
+    12,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3020": {
+   "id": "3020",
+   "desc": "Plate 2 x 4",
+   "bbox_ldu": [
+    80,
+    12,
+    40
+   ],
+   "studs_x": 4.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3795": {
+   "id": "3795",
+   "desc": "Plate 2 x 6",
+   "bbox_ldu": [
+    120,
+    12,
+    40
+   ],
+   "studs_x": 6.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3034": {
+   "id": "3034",
+   "desc": "Plate 2 x 8",
+   "bbox_ldu": [
+    160,
+    12,
+    40
+   ],
+   "studs_x": 8.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3031": {
+   "id": "3031",
+   "desc": "Plate 4 x 4",
+   "bbox_ldu": [
+    80,
+    12,
+    80
+   ],
+   "studs_x": 4.0,
+   "studs_z": 4.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3035": {
+   "id": "3035",
+   "desc": "Plate 4 x 8",
+   "bbox_ldu": [
+    160,
+    12,
+    80
+   ],
+   "studs_x": 8.0,
+   "studs_z": 4.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3070b": {
+   "id": "3070b",
+   "desc": "Tile 1 x 1 with Groove",
+   "bbox_ldu": [
+    20,
+    8,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "3069b": {
+   "id": "3069b",
+   "desc": "Tile 1 x 2 with Groove",
+   "bbox_ldu": [
+    40,
+    8,
+    20
+   ],
+   "studs_x": 2.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "63864": {
+   "id": "63864",
+   "desc": "Tile 1 x 3",
+   "bbox_ldu": [
+    60,
+    8,
+    20
+   ],
+   "studs_x": 3.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "2431": {
+   "id": "2431",
+   "desc": "Tile 1 x 4 with Groove",
+   "bbox_ldu": [
+    80,
+    8,
+    20
+   ],
+   "studs_x": 4.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "6636": {
+   "id": "6636",
+   "desc": "Tile 1 x 6",
+   "bbox_ldu": [
+    120,
+    8,
+    20
+   ],
+   "studs_x": 6.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "3068b": {
+   "id": "3068b",
+   "desc": "Tile 2 x 2 with Groove",
+   "bbox_ldu": [
+    40,
+    8,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "87079": {
+   "id": "87079",
+   "desc": "Tile 2 x 4",
+   "bbox_ldu": [
+    80,
+    8,
+    40
+   ],
+   "studs_x": 4.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "26603": {
+   "id": "26603",
+   "desc": "Tile 2 x 3",
+   "bbox_ldu": [
+    60,
+    8,
+    40
+   ],
+   "studs_x": 3.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.333,
+   "kind": "tile"
+  },
+  "3040b": {
+   "id": "3040b",
+   "desc": "Slope Brick 45 2 x 1",
+   "bbox_ldu": [
+    20,
+    28,
+    40
+   ],
+   "studs_x": 1.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "3665": {
+   "id": "3665",
+   "desc": "~Moved to 3665a",
+   "bbox_ldu": [
+    20,
+    28,
+    40
+   ],
+   "studs_x": 1.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3043": {
+   "id": "3043",
+   "desc": "Slope Brick 45 2 x 2 Double",
+   "bbox_ldu": [
+    40,
+    40,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.667,
+   "kind": "slope"
+  },
+  "3039": {
+   "id": "3039",
+   "desc": "Slope Brick 45 2 x 2",
+   "bbox_ldu": [
+    40,
+    28,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "3298": {
+   "id": "3298",
+   "desc": "Slope Brick 33 3 x 2",
+   "bbox_ldu": [
+    40,
+    28,
+    60
+   ],
+   "studs_x": 2.0,
+   "studs_z": 3.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "3299": {
+   "id": "3299",
+   "desc": "Slope Brick 33 2 x 4 Double",
+   "bbox_ldu": [
+    80,
+    14,
+    40
+   ],
+   "studs_x": 4.0,
+   "studs_z": 2.0,
+   "height_brick_units": 0.583,
+   "kind": "slope"
+  },
+  "3037": {
+   "id": "3037",
+   "desc": "Slope Brick 45 2 x 4",
+   "bbox_ldu": [
+    80,
+    28,
+    40
+   ],
+   "studs_x": 4.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "4286": {
+   "id": "4286",
+   "desc": "Slope Brick 33 3 x 1",
+   "bbox_ldu": [
+    20,
+    28,
+    60
+   ],
+   "studs_x": 1.0,
+   "studs_z": 3.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "4871": {
+   "id": "4871",
+   "desc": "Slope Brick 45 4 x 2 Double Inverted with Open Centre",
+   "bbox_ldu": [
+    40,
+    28,
+    80
+   ],
+   "studs_x": 2.0,
+   "studs_z": 4.0,
+   "height_brick_units": 1.167,
+   "kind": "slope"
+  },
+  "3062b": {
+   "id": "3062b",
+   "desc": "Brick 1 x 1 Round with Hollow Stud",
+   "bbox_ldu": [
+    20,
+    28,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "round"
+  },
+  "3941": {
+   "id": "3941",
+   "desc": "Brick 2 x 2 Round without Reinforcement",
+   "bbox_ldu": [
+    48,
+    28,
+    48
+   ],
+   "studs_x": 2.39,
+   "studs_z": 2.39,
+   "height_brick_units": 1.167,
+   "kind": "round"
+  },
+  "4032": {
+   "id": "4032",
+   "desc": "~Moved to 4032a",
+   "bbox_ldu": [
+    48,
+    12,
+    48
+   ],
+   "studs_x": 2.39,
+   "studs_z": 2.39,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "3063": {
+   "id": "3063",
+   "desc": "~Moved to 3063b",
+   "bbox_ldu": [
+    40,
+    28,
+    40
+   ],
+   "studs_x": 2.0,
+   "studs_z": 2.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "4589": {
+   "id": "4589",
+   "desc": "Cone 1 x 1",
+   "bbox_ldu": [
+    20,
+    28,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "3811": {
+   "id": "3811",
+   "desc": "Baseplate 32 x 32",
+   "bbox_ldu": [
+    640,
+    8,
+    640
+   ],
+   "studs_x": 32.0,
+   "studs_z": 32.0,
+   "height_brick_units": 0.333,
+   "kind": "baseplate"
+  },
+  "2465": {
+   "id": "2465",
+   "desc": "Brick 1 x 16",
+   "bbox_ldu": [
+    320,
+    28,
+    20
+   ],
+   "studs_x": 16.0,
+   "studs_z": 1.0,
+   "height_brick_units": 1.167,
+   "kind": "brick"
+  },
+  "6141": {
+   "id": "6141",
+   "desc": "Plate 1 x 1 Round",
+   "bbox_ldu": [
+    20,
+    12,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "85861": {
+   "id": "85861",
+   "desc": "Plate 1 x 1 Round with Open Stud",
+   "bbox_ldu": [
+    20,
+    12,
+    20
+   ],
+   "studs_x": 1.0,
+   "studs_z": 1.0,
+   "height_brick_units": 0.5,
+   "kind": "plate"
+  },
+  "6233": {
+   "id": "6233",
+   "desc": "Cone 3 x 3 x 2",
+   "bbox_ldu": [
+    60,
+    52,
+    60
+   ],
+   "studs_x": 3.0,
+   "studs_z": 3.0,
+   "height_brick_units": 2.167,
+   "kind": "brick"
+  },
+  "6143": {
+   "id": "6143",
+   "desc": "Brick 2 x 2 Round Reinforced",
+   "bbox_ldu": [
+    48,
+    28,
+    48
+   ],
+   "studs_x": 2.39,
+   "studs_z": 2.39,
+   "height_brick_units": 1.167,
+   "kind": "round"
+  }
+ }
+}
