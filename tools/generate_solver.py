@@ -26,7 +26,7 @@ import lego_ir as ir          # noqa: E402
 import solver as sv           # noqa: E402
 import render as rend         # noqa: E402
 
-MAX_ROUNDS = 3
+MAX_ROUNDS = 5
 
 
 def _client():

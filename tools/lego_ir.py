@@ -18,8 +18,10 @@ ldraw_model).
 """
 from __future__ import annotations
 
+import json
 import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 
 LEVEL = 3  # plaques par niveau de brique
 
@@ -120,6 +122,36 @@ def parse_openings(raw, depth, errors, ctx) -> list:
     return out
 
 
+def _normalize_color(value: str, errors: list, ctx: str) -> str:
+    """Accepte un code LDraw ('4') ou un nom de couleur ('Red'/'red') —
+    les LLM produisent souvent le nom : on normalise vers le code."""
+    value = str(value).strip()
+    if value.isdigit():
+        return value
+    if not value:
+        return "7"
+    for code, info in _colors_index().items():
+        if info["name"].lower() == value.lower():
+            return code
+    errors.append(f"{ctx} : couleur inconnue {value!r} (utilise un code "
+                  f"LDraw ou un nom du catalogue)")
+    return "7"
+
+
+_COLORS: dict | None = None
+
+
+def _colors_index() -> dict:
+    global _COLORS
+    if _COLORS is None:
+        path = Path(__file__).resolve().parent.parent / "pieces_catalog.json"
+        try:
+            _COLORS = json.loads(path.read_text()).get("colors", {})
+        except (OSError, ValueError):
+            _COLORS = {}
+    return _COLORS
+
+
 def parse_component(raw, errors, idx) -> Component | None:
     ctx = f"composant #{idx}"
     if not isinstance(raw, dict):
@@ -136,7 +168,7 @@ def parse_component(raw, errors, idx) -> Component | None:
         width=int(raw.get("width", raw.get("w", 0))),
         depth=int(raw.get("depth", raw.get("d", 0))),
         height=int(raw.get("height", 3)),
-        color=str(raw.get("color", "7")),
+        color=_normalize_color(raw.get("color", "7"), errors, ctx),
         roof=str(raw.get("roof", "none")),
         floor=bool(raw.get("floor", False)),
         pattern=str(raw.get("pattern", "wall")),
@@ -191,7 +223,8 @@ def from_dict(raw) -> tuple[Blueprint, list]:
                        raw.get("max_height", 24))),
         objectives={**Blueprint().objectives,
                     **(raw.get("objectives") or {})},
-        palette=[str(c) for c in (raw.get("palette") or [])],
+        palette=[_normalize_color(c, errors, "palette")
+                 for c in (raw.get("palette") or [])],
     )
     for i, rc in enumerate(raw.get("components") or []):
         comp = parse_component(rc, errors, i)
@@ -311,8 +344,21 @@ def validate(bp: Blueprint) -> list:
         for j in range(i + 1, len(bp.components)):
             a, b = bp.components[i], bp.components[j]
             if _boxes_overlap(a, b):
+                hint = ""
+                # cas fréquent : un slab/plancher posé sur le périmètre
+                # d'un box au lieu de son intérieur
+                for outer, inner in ((a, b), (b, a)):
+                    if (inner.type == "slab" and
+                            outer.x <= inner.x and outer.z <= inner.z and
+                            inner.x + inner.width <= outer.x + outer.width and
+                            inner.z + inner.depth <= outer.z + outer.depth):
+                        hint = (f" — pour un plancher intérieur à "
+                                f"{outer.cid or outer.type} : x={outer.x + 1}, "
+                                f"z={outer.z + 1}, width={outer.width - 2}, "
+                                f"depth={outer.depth - 2}")
+                        break
                 errors.append(f"{a.cid or a.type} et {b.cid or b.type} "
-                              f"chevauchent leurs empreintes")
+                              f"chevauchent leurs empreintes{hint}")
     # un composant d'un seul tenant : tout doit toucher le sol (MVP :
     # pas de pièces volantes par conception, chaque composant part de y=0)
     return errors
