@@ -25,22 +25,19 @@ DEFAULT_MAX_PER_STEP = 12
 
 
 def _deps(model):
-    """Pour chaque brique : les briques qui doivent être posées avant elle."""
+    """Pour chaque brique : les briques qui doivent être posées avant elle.
+
+    Seuls les contacts **verticaux** comptent : une brique ne peut être posée
+    que sur les studs d'une brique déjà en place (sémantique LEGO réelle)."""
     cells_per, owner = model._voxels()
     deps: list[set[int]] = [set() for _ in model.bricks]
     for i, b in enumerate(model.bricks):
         if b["y"] == 0:
             continue
         for (cx, cy, cz) in cells_per[i]:
-            for nb in ((cx, cy - 1, cz),          # juste en dessous
-                       (cx + 1, cy, cz), (cx - 1, cy, cz),   # voisins latéraux
-                       (cx, cy, cz + 1), (cx, cy, cz - 1)):
-                j = owner.get(nb)
-                if j is None or j == i:
-                    continue
-                bj = model.bricks[j]
-                if bj["y"] < b["y"] or (bj["y"] == b["y"] and j < i):
-                    deps[i].add(j)
+            j = owner.get((cx, cy - 1, cz))
+            if j is not None and j != i:
+                deps[i].add(j)
     return deps
 
 
@@ -92,16 +89,12 @@ def validate(model, steps: list[list[int]]) -> list[str]:
             if b["y"] == 0:
                 placed.add(i)
                 continue
-            # a-t-elle un appui déjà posé (vertical ou latéral) ?
+            # a-t-elle un appui vertical déjà posé ?
             supported = False
             for (cx, cy, cz) in cells_per[i]:
-                for nb in ((cx, cy - 1, cz), (cx + 1, cy, cz), (cx - 1, cy, cz),
-                           (cx, cy, cz + 1), (cx, cy, cz - 1)):
-                    j = owner.get(nb)
-                    if j is not None and j in placed and j != i:
-                        supported = True
-                        break
-                if supported:
+                j = owner.get((cx, cy - 1, cz))
+                if j is not None and j in placed and j != i:
+                    supported = True
                     break
             if not supported:
                 problems.append(

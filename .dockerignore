@@ -1,0 +1,12 @@
+.git
+.gitignore
+ldraw/
+out/
+renders/
+models/
+parts_index_cache.json
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+node_modules/

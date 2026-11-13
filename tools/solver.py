@@ -9,9 +9,9 @@ Modèle exact-cover par région :
     est couverte par EXACTEMENT une pièce (=> zéro collision par
     construction) ;
   - contrainte de support : une pièce posée au-dessus du sol doit toucher
-    la pièce du dessous sur au moins une cellule, OU être accolée
-    latéralement à une pièce de même tranche verticale (linteau au-dessus
-    d'une porte) — c'est la sémantique de tools/stability.py ;
+    la pièce du dessous sur au moins une cellule (studs). L'accolement
+    latéral ne compte pas : deux briques côte à côte ne sont pas attachées
+    (voir tools/studs.py) ;
   - objectif : min λ1·N_pièces + λ2·N_types (§5 du cahier des charges).
 
 solve_blueprint() enchaîne : validation IR -> solve par région -> pose dans
@@ -105,15 +105,10 @@ def solve_region(region: ir.Region, part_dims: dict,
     for key in required:
         m.AddExactlyOne(p[i] for i in cover[key])
 
-    # accolement latéral : seulement vers une brique ancrée (au sol ou avec
-    # un appui vertical statiquement possible) — sinon deux briques peuvent
-    # se déclarer mutuellement « accolées » sans aucune fondation.
-    def anchored(c):
-        return (c["y"] <= region.y_base or
-                any(cover.get((cell, c["y"] - 1))
-                    for cell in c["cells"]))
-
-    # support : contact vertical sur >= 1 cellule, OU accolade latérale
+    # support : contact vertical sur au moins une cellule avec la couche du
+    # dessous. Un linteau au-dessus d'une porte est posé sur les montants
+    # latéraux du mur (ses cellules au-dessus du mur ont un appui) ; une pièce
+    # entièrement au-dessus du vide n'est pas posable, même accolée.
     for i, c in enumerate(cands):
         if c["y"] <= region.y_base:
             continue
@@ -125,18 +120,10 @@ def solve_region(region: ir.Region, part_dims: dict,
             b = m.NewBoolVar(f"below{i}_{cell}")
             m.AddMaxEquality(b, [p[q] for q in qs])
             below.append(b)
-        if not below:
-            # aucune cellule ne peut être posée sur du dessous : il faut
-            # absolument un accolement latéral (linteau)
-            glue = _glue_vars(m, c, cands, p, i, anchored)
-            if glue:
-                m.Add(sum(glue) >= 1).OnlyEnforceIf(p[i])
-            else:
-                m.Add(p[i] == 0)
-            continue
-        glue = _glue_vars(m, c, cands, p, i, anchored)
-        terms = below + glue
-        m.Add(sum(terms) >= 1).OnlyEnforceIf(p[i])
+        if below:
+            m.Add(sum(below) >= 1).OnlyEnforceIf(p[i])
+        else:
+            m.Add(p[i] == 0)
 
     # objectif : min pièces + petit malus par type de pièce utilisé
     types = sorted({c["part_id"] for c in cands})
@@ -166,25 +153,9 @@ def solve_region(region: ir.Region, part_dims: dict,
 
 
 def _glue_vars(m, c, cands, p, i, anchored=None):
-    """Vars OR : placements accolés latéralement à c sur sa tranche verticale."""
-    cellset = set(c["cells"])
-    neighbors = set()
-    for (x, z) in cellset:
-        for dx, dz in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            n = (x + dx, z + dz)
-            if n not in cellset:
-                neighbors.add(n)
-    glue = []
-    for j, q in enumerate(cands):
-        if j == i:
-            continue
-        if anchored is not None and not anchored(q):
-            continue
-        if not (q["y"] < c["y"] + c["h"] and c["y"] < q["y"] + q["h"]):
-            continue
-        if set(q["cells"]) & neighbors:
-            glue.append(p[j])
-    return glue
+    """Conservé pour compatibilité : l'accolement latéral n'est plus un
+    support (voir tools/studs.py). Retourne toujours une liste vide."""
+    return []
 
 
 # ---------------------------------------------------------------------------

@@ -239,39 +239,13 @@ class LDrawModel:
         return _st.analyze(self)
 
     def connectivity(self) -> dict:
-        """Composantes connexes du modèle (voxels adjacents par face).
-        Détecte les amas de briques détachés du reste — un modèle en un seul
-        bloc a islands = 1."""
-        voxels: dict[tuple, int] = {}
-        for i, b in enumerate(self.bricks):
-            part = self.part(b["part_id"])
-            sx, sz = self._footprint(part, b["rot"])
-            level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
-            for cx in range(b["x"], b["x"] + sx):
-                for cz in range(b["z"], b["z"] + sz):
-                    for cy in range(b["y"], b["y"] + level_h):
-                        voxels[(cx, cy, cz)] = i
-        parent: dict[tuple, tuple] = {v: v for v in voxels}
-
-        def find(a):
-            while parent[a] != a:
-                parent[a] = parent[parent[a]]
-                a = parent[a]
-            return a
-
-        def union(a, b):
-            ra, rb = find(a), find(b)
-            if ra != rb:
-                parent[rb] = ra
-
-        for (cx, cy, cz) in voxels:
-            for nb in ((cx + 1, cy, cz), (cx, cy + 1, cz), (cx, cy, cz + 1)):
-                if nb in voxels:
-                    union((cx, cy, cz), nb)
-        groups: dict[tuple, set] = {}
-        for v, brick_i in voxels.items():
-            groups.setdefault(find(v), set()).add(brick_i)
-        sizes = sorted((len(g) for g in groups.values()), reverse=True)
+        """Composantes connexes réelles : deux pièces ne sont connectées que
+        par des studs (voir tools/studs.py). Un modèle soulevable n'a qu'un
+        seul amas ; des pièces simplement accolées latéralement en forment
+        plusieurs."""
+        import studs
+        comps = studs.components(self)
+        sizes = sorted((len(c) for c in comps), reverse=True)
         return {"islands": len(sizes), "largest": sizes[0] if sizes else 0,
                 "sizes": sizes[:8]}
 
@@ -298,24 +272,12 @@ class LDrawModel:
         return cells_per, owner
 
     def floating_bricks(self) -> list[int]:
-        """Indices des briques sans appui : ni support vertical, ni accolement
-        (direct ou par chaîne) à une brique posée au sol."""
+        """Indices des pièces sans appui réel : aucune chaîne d'étuds ne les
+        relie au sol (l'accolement latéral ne compte pas)."""
         if not self.bricks:
             return []
-        cells_per, owner = self._voxels()
-        reachable = {i for i, b in enumerate(self.bricks) if b["y"] == 0}
-        stack = list(reachable)
-        while stack:
-            i = stack.pop()
-            for (cx, cy, cz) in cells_per[i]:
-                for nb in ((cx + 1, cy, cz), (cx - 1, cy, cz),
-                           (cx, cy, cz + 1), (cx, cy, cz - 1),
-                           (cx, cy + 1, cz), (cx, cy - 1, cz)):
-                    j = owner.get(nb)
-                    if j is not None and j not in reachable:
-                        reachable.add(j)
-                        stack.append(j)
-        return [i for i in range(len(self.bricks)) if i not in reachable]
+        import studs
+        return studs.report(self)["unsupported"]
 
     def settle(self) -> int:
         """Repose les briques qui ne tiennent à rien (aucun support vertical,

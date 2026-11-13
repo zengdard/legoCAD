@@ -47,18 +47,18 @@ def test_pyramide_est_stable():
     assert r["min_stability"] == 1.0
 
 
-def test_plancher_tenu_par_quatre_piliers_est_stable():
-    """Les briques intérieures n'ont pas de support vertical mais sont tenues
-    latéralement par leurs studs : le modèle ne doit pas être déclaré instable."""
+def test_plancher_sur_quatre_piliers_n_est_pas_constructible():
+    """Physique LEGO : des plaques côte à côte au même niveau ne sont PAS
+    attachées. Seuls les quatre coins posés sur les piliers tiennent ; tout
+    le reste du plancher tombe."""
     m = _m()
     for x in (0, 11):
         for z in (0, 11):
             m.column(x, z, 1, "71")
     m.slab(0, 0, 12, 12, 3, "4")
     r = st.analyze(m)
-    assert not r["unsupported"], "aucune brique ne doit être sans appui"
-    assert r["min_stability"] == 0.8   # tenue latérale signalée, pas éliminatoire
-    assert r["overhang_cells"] > 0
+    assert r["unsupported"], "le centre du plancher n'est tenu par rien"
+    assert r["min_stability"] == 0.0
 
 
 # --- basculement ------------------------------------------------------ #
@@ -96,15 +96,27 @@ def test_porte_a_faux_modere_reste_accepte():
     assert r["overhang_cells"] == 1  # signalé comme information
 
 
-def test_brique_tenue_seulement_par_les_studs():
-    """Brique accolée latéralement à une tour, sans rien dessous : elle tient
-    (les studs la retiennent) mais c'est fragile → pénalité légère."""
+def test_accolement_lateral_ne_tient_pas():
+    """Une brique collée latéralement à une tour, sans rien dessous, n'est
+    attachée par aucun stud : elle tombe."""
     m = _m()
     m.column(0, 0, 3, "71")
     m.place("3001", 1, 0, 3, "4")   # accolée à la tour au niveau 3
     r = st.analyze(m)
+    assert r["unsupported"] == [3]
+    assert r["min_stability"] == 0.0
+
+
+def test_volume_compile_est_stable():
+    """Le compilateur volume → briques produit un modèle d'un seul bloc, dont
+    chaque pièce est tenue par des studs."""
+    from voxel import VoxelGrid
+    from brickify import brickify
+    m, rep = brickify(VoxelGrid().box(0, 0, 0, 12, 6, 8, "4"), "bloc")
+    r = st.analyze(m)
+    assert rep["coverage"] == 1.0
     assert not r["unsupported"]
-    assert r["min_stability"] == 0.8
+    assert r["islands"] == 1
 
 
 # --- intégration avec le générateur ----------------------------------- #

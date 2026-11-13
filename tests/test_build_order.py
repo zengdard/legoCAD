@@ -15,14 +15,12 @@ import build_order as bo  # noqa: E402
 
 
 def _house():
-    m = LDrawModel("h")
-    m.slab(0, 0, 12, 8, 0, "19")
-    m.slab(0, 0, 12, 1, 3, "19", layers=2)
-    m.slab(0, 7, 12, 1, 3, "19", layers=2)
-    m.slab(0, 0, 1, 8, 3, "19", layers=2)
-    m.slab(11, 0, 1, 8, 3, "19", layers=2)
-    arch.pitched_roof(m, 0, 0, 12, 8, 9, "4")
-    return m
+    """Volume de test compilé par le pipeline réel (briques posées sur studs)."""
+    from voxel import VoxelGrid
+    from brickify import brickify, BrickifyOptions
+    model, _ = brickify(VoxelGrid().box(0, 0, 0, 12, 9, 8, "19"), "h",
+                        BrickifyOptions(add_steps=False))
+    return model
 
 
 def test_sequence_couvre_toutes_les_briques():
@@ -47,14 +45,11 @@ def test_ordre_va_du_bas_vers_le_haut():
         assert b >= a, "l'ordre redescend : illisible pour une notice"
 
 
-def test_le_toit_est_pose_apres_les_murs():
+def test_les_briques_du_haut_viennent_en_dernier():
     m = _house()
     steps = bo.plan(m)
-    toit = [k for k, s in enumerate(steps)
-            if any(m.bricks[i]["part_id"] in ("3037", "3039") for i in s)]
-    murs = [k for k, s in enumerate(steps)
-            if any(m.bricks[i]["part_id"] == "3001" for i in s)]
-    assert min(toit) > min(murs)
+    levels = [max(m.bricks[i]["y"] for i in s) for s in steps]
+    assert levels == sorted(levels)
 
 
 def test_steps_de_taille_raisonnable():

@@ -10,6 +10,9 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT / "tools"))
 
+import pytest  # noqa: E402
+pytest.importorskip("ortools", reason="solver CP-SAT optionnel")
+
 import lego_ir as ir          # noqa: E402
 import solver as sv           # noqa: E402
 import build_order as bo      # noqa: E402

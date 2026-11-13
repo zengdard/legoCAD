@@ -1,0 +1,16 @@
+services:
+  legocad:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # facultatif : active le mode texte par LLM
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      # pas de LeoCAD dans le conteneur : rendu SVG isométrique
+      LEGOCAD_NO_RENDER: "1"
+    volumes:
+      - ./out:/app/out
+      - ./models:/app/models
+      # pour importer n'importe quelle pièce LDraw (optionnel, ~615 Mo) :
+      # - ./ldraw:/app/ldraw:ro
+    restart: unless-stopped

@@ -1,0 +1,11 @@
+# --- cœur (le pipeline volume -> briques n'a aucune dépendance) ------------
+# Pillow : import d'images -> mosaïques LEGO
+Pillow>=10.0
+# --- mode texte (LLM architecte / structure-as-code) ----------------------
+openai>=1.30
+# --- solveur CP-SAT (mode blueprint historique, optionnel) ----------------
+# ortools>=9.10
+# --- serveur MCP ----------------------------------------------------------
+# fastmcp>=0.4
+# --- tests ----------------------------------------------------------------
+pytest>=8.0

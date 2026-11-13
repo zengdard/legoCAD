@@ -7,7 +7,10 @@ from pathlib import Path
 PROJECT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT / "tools"))
 
+import pytest  # noqa: E402
+
 import lego_ir as ir  # noqa: E402
+pytest.importorskip("ortools", reason="solver CP-SAT optionnel")
 
 
 def _bp(components):

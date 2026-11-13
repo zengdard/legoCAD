@@ -95,6 +95,16 @@
    "hex": "#A0EEF7",
    "translucent": true
   },
+  "44": {
+   "name": "Trans Bright Reddish Lilac",
+   "hex": "#96709F",
+   "translucent": true
+  },
+  "46": {
+   "name": "Trans Yellow",
+   "hex": "#F5CD2F",
+   "translucent": true
+  },
   "47": {
    "name": "Trans Clear",
    "hex": "#FCFCFC",

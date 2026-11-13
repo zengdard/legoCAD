@@ -1,159 +1,126 @@
 #!/usr/bin/env python3
-"""Analyse de stabilité physique d'un modèle LDraw.
+"""Analyse de stabilité physique d'un modèle LDraw — version « vrais LEGO ».
+
+Le modèle de connexion est celui du jeu réel : une pièce n'est tenue que par
+les **studs** de la pièce située juste en dessous (voir tools/studs.py).
+Deux briques côte à côte ne sont pas attachées, même si elles se touchent.
 
 Trois contrôles, du plus grave au plus fin :
-  1. Chemin de charge — chaque brique doit reposer, directement ou par une
-     chaîne de briques, sur le sol (y=0). Une brique sans chemin est instable.
-  2. Support direct — fraction de l'empreinte d'une brique réellement posée
-     sur une brique du dessous (les porte-à-faux ont un support partiel).
-  3. Basculement — à chaque joint horizontal, le centre de gravité de tout ce
-     qui est au-dessus doit tomber au-dessus de la zone de contact. C'est le
-     critère d'équilibre des moments utilisé par Legolization / StableLego,
-     en version discrète (pas de solveur LP nécessaire).
+  1. Chemin de charge — chaque pièce doit être reliée au sol (y=0) par une
+     chaîne de connexions étud → tube. C'est éliminatoire : une pièce sans
+     chemin tombe dès qu'on soulève le modèle.
+  2. Support direct — fraction de l'empreinte réellement posée sur une pièce
+     du dessous. Un porte-à-faux est légal, mais il est signalé.
+  3. Basculement — à chaque joint horizontal, le centre de gravité de la
+     charge descendante doit tomber au-dessus de la zone de contact
+     (critère d'équilibre des moments, version discrète).
 
-La métrique qui compte est `min_stability` : le maillon faible, comme dans
-BrickGPT (une moyenne bonne peut cacher une brique qui fait tout tomber).
+`min_stability` reste le maillon faible (comme dans BrickGPT) : 1.0 = tout
+est tenu, 0.0 = une pièce n'est attachée à rien.
 """
 from __future__ import annotations
 
-from ldraw_model import LDU_PER_LEVEL, _NOMINAL_H
-
-
-def _brick_cells(model, b: dict):
-    """Cellules (x_plaque, y_plaque, z) couvertes par une brique, et son
-    volume en voxels (utilisé comme poids)."""
-    part = model.part(b["part_id"])
-    sx, sz = model._footprint(part, b["rot"])
-    h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
-    cells = [(cx, cy, cz)
-             for cx in range(b["x"], b["x"] + sx)
-             for cz in range(b["z"], b["z"] + sz)
-             for cy in range(b["y"], b["y"] + h)]
-    return cells, len(cells), (sx, sz, h)
+import studs
 
 
 def analyze(model) -> dict:
     """Retourne le rapport de stabilité du modèle."""
     if not model.bricks:
         return {"min_stability": 0.0, "mean_stability": 0.0, "unsupported": [],
-                "weak": [], "overhang_cells": 0, "tipping_joints": []}
+                "weak": [], "overhang_cells": 0, "tipping_joints": [],
+                "single_stud": [], "islands": 0, "connections": 0,
+                "resting": []}
 
-    parts = [_brick_cells(model, b) for b in model.bricks]
+    rep = studs.report(model)
+    geoms = rep["geoms"]
+    sup = rep["support"]
+    unsupported = rep["unsupported"]
 
-    # index voxel -> brique (le dernier posé gagne ; les collisions sont déjà
-    # interdites, donc un voxel n'appartient qu'à une brique)
-    owner: dict[tuple, int] = {}
-    for i, (cells, _, _) in enumerate(parts):
-        for c in cells:
-            owner[c] = i
+    # --- 3 : basculement par joint horizontal -------------------------- #
+    # Pour chaque niveau où une pièce commence, on considère uniquement la
+    # charge qui repose *via ce joint* : les pièces posées à ce niveau, puis
+    # tout ce qui est empilé dessus. Comparer le CoM de TOUT le modèle au
+    # contact d'un petit joint produirait des faux positifs (un escalier de
+    # toit n'est pas en équilibre sur chaque marche).
+    volume = [len(g["footprint"]) * g["height"] for g in geoms]
+    up: dict[int, list[int]] = {}
+    for e in sup["edges"]:
+        up.setdefault(e["below"], []).append(e["above"])
 
-    # --- 1 & 2 : support direct et appui ---
-    supports: list[set[int]] = [set() for _ in model.bricks]
-    support_frac: list[float] = []
-    for i, b in enumerate(model.bricks):
-        cells, vol, (sx, sz, h) = parts[i]
-        footprint = {(cx, cz) for (cx, cy, cz) in cells if cy == b["y"]}
-        if b["y"] == 0:
-            support_frac.append(1.0)
-            continue
-        supported = set()
-        for (cx, cz) in footprint:
-            j = owner.get((cx, b["y"] - 1, cz))
-            if j is not None and j != i:
-                supported.add(j)
-        support_frac.append(len(
-            {(cx, cz) for (cx, cz) in footprint
-             if owner.get((cx, b["y"] - 1, cz)) is not None}) / max(1, len(footprint)))
-        supports[i] = supported
-
-    # Appui : une brique tient si elle atteint le sol par une chaîne de
-    # connexions — support vertical OU accolement latéral (les studs tiennent :
-    # un plancher de 18 briques fixé aux quatre coins est solide).
-    reachable: set[int] = {i for i, b in enumerate(model.bricks) if b["y"] == 0}
-    stack = list(reachable)
-    while stack:
-        i = stack.pop()
-        b = model.bricks[i]
-        cells = parts[i][0]
-        for (cx, cy, cz) in cells:
-            for nb in ((cx + 1, cy, cz), (cx - 1, cy, cz), (cx, cy, cz + 1),
-                       (cx, cy, cz - 1), (cx, cy + 1, cz), (cx, cy - 1, cz)):
-                j = owner.get(nb)
-                if j is not None and j not in reachable:
-                    reachable.add(j)
-                    stack.append(j)
-    unsupported = [i for i in range(len(model.bricks)) if i not in reachable]
-
-    # --- 3 : basculement par joint horizontal ---
-    # poids = volume en voxels ; on compare le CoM de la partie supérieure à
-    # la zone de contact du joint.
-    total_vol = sum(v for _, v, _ in parts)
-    joints = sorted({b["y"] for b in model.bricks if b["y"] > 0})
+    joints = sorted({g["base"] for g in geoms if g["base"] > 0})
     tipping_joints = []
     for y in joints:
-        # Seules les briques dont le poids descend verticalement participent au
-        # basculement : une brique simplement accolée (support vertical nul) est
-        # retenue par ses studs latéraux, pas par ce joint.
-        above = [i for i, b in enumerate(model.bricks)
-                 if b["y"] >= y and (b["y"] == 0 or support_frac[i] > 0)]
-        if not above:
+        seeds = [i for i, g in enumerate(geoms)
+                 if g["base"] == y and sup["contact"][i]]
+        if not seeds:
             continue
-        wsum = sum(parts[i][1] for i in above)
-        if wsum == 0:
+        load = set(seeds)
+        stack = list(seeds)
+        while stack:
+            i = stack.pop()
+            for j in up.get(i, []):
+                if j not in load and geoms[j]["base"] >= y:
+                    load.add(j)
+                    stack.append(j)
+        wsum = sum(volume[i] for i in load)
+        if not wsum:
             continue
-        com_x = sum(parts[i][1] * (model.bricks[i]["x"] + parts[i][2][0] / 2.0)
-                    for i in above) / wsum
-        com_z = sum(parts[i][1] * (model.bricks[i]["z"] + parts[i][2][1] / 2.0)
-                    for i in above) / wsum
+        com_x = com_z = 0.0
+        for i in load:
+            sx, sz = model._footprint(geoms[i]["part"],
+                                      model.bricks[i]["rot"])
+            com_x += volume[i] * (model.bricks[i]["x"] + sx / 2.0)
+            com_z += volume[i] * (model.bricks[i]["z"] + sz / 2.0)
+        com_x /= wsum
+        com_z /= wsum
         contact = set()
-        for i in above:
-            b = model.bricks[i]
-            for (cx, cz) in {(cx, cz) for (cx, cy, cz) in parts[i][0]
-                             if cy == b["y"]}:
-                if owner.get((cx, y - 1, cz)) is not None:
-                    contact.add((cx, cz))
+        for i in seeds:
+            contact |= sup["contact"][i]
         if not contact:
             continue
         xs = [c[0] for c in contact]
         zs = [c[1] for c in contact]
-        # marge : le CoM doit tomber dans l'emprise du contact (tolérance 0.5 stud)
+        # tolérance d'un demi-stud : les studs LEGO encaissent un léger
+        # porte-à-faux, un vrai basculement est bien plus franc
         inside = (min(xs) - 0.5 <= com_x <= max(xs) + 1.5
                   and min(zs) - 0.5 <= com_z <= max(zs) + 1.5)
         if not inside:
-            tipping_joints.append({"y": y, "com": [round(com_x, 2), round(com_z, 2)],
+            tipping_joints.append({"y": y,
+                                   "com": [round(com_x, 2), round(com_z, 2)],
                                    "contact_x": [min(xs), max(xs)],
-                                   "contact_z": [min(zs), max(zs)]})
+                                   "contact_z": [min(zs), max(zs)],
+                                   "load": len(load)})
 
-    # --- scores locaux ---
-    # Le score reflète ce qui fait tomber un modèle : pas de chemin de charge
-    # (éliminatoire) ou basculement d'un joint. Le support partiel n'est qu'une
-    # fragilité : une dalle sur quatre piliers est stable, une brique tenue par
-    # un seul stud est légitime en LEGO.
     tipping_above: set[int] = set()
     for joint in tipping_joints:
-        for i, b in enumerate(model.bricks):
-            if b["y"] >= joint["y"]:
+        for i, g in enumerate(geoms):
+            if g["base"] >= joint["y"]:
                 tipping_above.add(i)
+
+    # --- scores locaux ------------------------------------------------ #
     local: list[float] = []
     weak = []
-    for i, b in enumerate(model.bricks):
+    for i, g in enumerate(geoms):
+        b = model.bricks[i]
         if i in unsupported:
             local.append(0.0)
+            reason = ("sans_appui" if not sup["below"].get(i)
+                      else "tenue_par_du_lisse")
             weak.append({"index": i, "part": b["part_id"],
-                         "pos": [b["x"], b["y"], b["z"]], "reason": "sans_appui"})
+                         "pos": [b["x"], b["y"], b["z"]], "reason": reason})
             continue
         score = 1.0
-        if support_frac[i] == 0.0 and b["y"] > 0:
-            # tenue uniquement par les studs latéraux : fragile
-            score *= 0.8
+        if g["base"] > 0 and sup["studs"].get(i, 0) == 1:
+            # attachée par un seul tenon : légal, mais fragile
+            score *= 0.9
             weak.append({"index": i, "part": b["part_id"],
                          "pos": [b["x"], b["y"], b["z"]],
-                         "reason": "aucun support vertical"})
-        elif support_frac[i] < 0.25:
+                         "reason": "1 seul stud"})
+        elif g["base"] > 0 and sup["fraction"][i] < 0.25:
             score *= 0.85
             weak.append({"index": i, "part": b["part_id"],
                          "pos": [b["x"], b["y"], b["z"]],
-                         "reason": f"support {support_frac[i]:.0%}"})
+                         "reason": f"support {sup['fraction'][i]:.0%}"})
         if i in tipping_above:
             score *= 0.5
         local.append(score)
@@ -166,18 +133,28 @@ def analyze(model) -> dict:
         "mean_stability": round(mean_stability, 3),
         "unsupported": unsupported,
         "weak": weak[:12],
-        "overhang_cells": sum(1 for f in support_frac if f < 1.0),
+        "overhang_cells": sum(1 for i, g in enumerate(geoms)
+                              if g["base"] > 0 and sup["fraction"][i] < 1.0),
         "tipping_joints": tipping_joints[:6],
+        "single_stud": rep["single_stud"],
+        "islands": rep["islands"],
+        "connections": rep["connections"],
+        "resting": rep["resting"],
     }
 
 
 def summary_line(report: dict) -> str:
     """Résumé court pour les messages d'erreur et les logs."""
-    bits = [f"min {report['min_stability']:.2f}", f"moy {report['mean_stability']:.2f}"]
-    if report["unsupported"]:
-        bits.append(f"{len(report['unsupported'])} sans appui")
-    if report["tipping_joints"]:
+    bits = [f"min {report['min_stability']:.2f}",
+            f"moy {report['mean_stability']:.2f}"]
+    if report.get("islands", 0) > 1:
+        bits.append(f"{report['islands']} amas")
+    if report.get("unsupported"):
+        bits.append(f"{len(report['unsupported'])} non attachées")
+    if report.get("tipping_joints"):
         bits.append(f"{len(report['tipping_joints'])} joint(s) instable(s)")
-    if report["overhang_cells"]:
+    if report.get("overhang_cells"):
         bits.append(f"{report['overhang_cells']} porte-à-faux")
+    if report.get("single_stud"):
+        bits.append(f"{len(report['single_stud'])} tenues par 1 stud")
     return " | ".join(bits)
