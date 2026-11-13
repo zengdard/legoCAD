@@ -138,7 +138,9 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 
 - **Pentes** : `3040b`, `3039`, `3037`, `4286`, `3298` posées sur les marches
   de 3 plaques (`tools/slopes.py`). Les tuiles sous la pente sont remplacées
-  par des plaques pour que la pente soit réellement attachée.
+  par des plaques pour que la pente soit réellement attachée. Les cheese
+  slopes 2 plaques (54200/85984/15068) sont identifiés et leur hauteur est
+  supportée, mais leur pose n'est pas encore validée au rendu : désactivées.
 - **Tiles** : une plaque de finition (`tile_cap`) couvre chaque sommet ;
   la surface est lisse, comme sur un set réel.
 - **Pièces 2D** : fondation 4×4/4×8 (`3031`/`3035`) pour relier les rangées
@@ -149,8 +151,9 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 - **SNOT / charnières** : les familles sont identifiées (`stud`, `snot`,
   `axle`, `hinge`, `ball`) et signalées ; la génération SNOT complète
   (rotations 3D) reste à faire.
-- **Vision** : `tools/depth_to_voxel.py` transforme une depth map en relief
-  2.5D constructible ; un modèle externe se branche via `--depth-cmd`.
+- **Vision** : `tools/depth_onnx.py` (Depth Anything V2 small, ONNX) produit
+  une depth map réelle sans PyTorch ; `tools/depth_to_voxel.py` la transforme
+  en relief 2.5D constructible. Un autre modèle se branche via `--depth-cmd`.
 - **Approvisionnement / PDF** : `tools/rebrickable.py` et
   `tools/pdf_notice.py` (LPub3D si installé, sinon notice HTML).
 
@@ -169,16 +172,17 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 
 ### P2 — l'approvisionnement
 
-- Brancher l'**API Rebrickable** (`REBRICKABLE_API_KEY`) pour vérifier
-  réellement les couples pièce/couleur et récupérer des prix.
+- L'**API Rebrickable** est branchée (`tools/rebrickable.py`) : il ne manque
+  que la clé `REBRICKABLE_API_KEY` pour vérifier les couples pièce/couleur
+  et récupérer des prix.
 - Export **BrickLink XML** validé (mapping LDraw → BrickLink), alternative
   CSV Rebrickable.
 - Filtre « budget » / « pièces déjà possédées » (inventaire utilisateur).
 
 ### P3 — la notice et la diffusion
 
-- **PDF** : LPub3D headless (`flatpak run io.github.trevorsandy.LPub3D`)
-  pour des callouts et des bulles de pièces professionnels.
+- **PDF** : LPub3D headless installé et testé ; `make_model --pdf` produit
+  le document (24 pages pour la maison).
 - **Web** : `web/server.py` (fait) + Docker ; déploiement VPS derrière
   Cloudflare Tunnel, ou Fly.io/Render. Mettre en cache les aperçus et
   limiter la taille des imports.

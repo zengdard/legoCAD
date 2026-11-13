@@ -36,8 +36,8 @@ def _colors() -> dict:
 
 
 def _part_height_plates(part: dict) -> int:
-    from ldraw_model import LDU_PER_LEVEL, _NOMINAL_H
-    return max(1, _NOMINAL_H.get(part.get("kind", ""), 24) // LDU_PER_LEVEL)
+    from ldraw_model import part_levels
+    return part_levels(part)
 
 
 def part_icon(model, part_id: str, color: str, size: int = 54) -> str:

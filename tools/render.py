@@ -62,7 +62,7 @@ def model_bounds_ldraw(ldr: Path) -> tuple[list[float], list[float]] | None:
     à partir des positions et des empreintes réelles des pièces."""
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from ldraw_model import _part_data, _NOMINAL_H
+    from ldraw_model import _part_data, part_levels
 
     lo = [float("inf")] * 3
     hi = [float("-inf")] * 3
@@ -86,7 +86,7 @@ def model_bounds_ldraw(ldr: Path) -> tuple[list[float], list[float]] | None:
         sx, sz = data["studs_x"] * 10, data["studs_z"] * 10
         hx = abs(rot[0]) * sx + abs(rot[3]) * sz
         hz = abs(rot[6]) * sx + abs(rot[8]) * sz
-        hy = _NOMINAL_H.get(data["kind"], 24) / 2.0
+        hy = part_levels(data) * 8 / 2.0
         for v, k in (((cx - hx, cx + hx), 0), ((cy - hy, cy + hy), 1),
                      ((cz - hz, cz + hz), 2)):
             lo[k] = min(lo[k], v[0])

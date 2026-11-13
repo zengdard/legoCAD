@@ -40,7 +40,8 @@ def build(ldr: str | Path, out_pdf: str | Path, timeout: int = 900) -> Path:
     out.parent.mkdir(parents=True, exist_ok=True)
     res = subprocess.run(
         ["flatpak", "run", "--filesystem=host", APP,
-         "-pe", "-o", "pdf", "-of", str(out), str(ldr)],
+         "-pe", "-o", "pdf", "-of", str(out),
+         "-od", str(out.parent), str(ldr)],
         cwd=str(PROJECT), capture_output=True, text=True, timeout=timeout,
         shell=False)
     if res.returncode != 0 or not out.exists():

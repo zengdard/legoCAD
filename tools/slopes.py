@@ -19,11 +19,18 @@ from __future__ import annotations
 
 # (depth, width) -> (part_id, description)
 SLOPES = {
-    (2, 1): "3040b",   # Slope 45 2 x 1
+    (2, 1): "3040b",   # Slope 45 2 x 1 (3 plaques)
     (2, 2): "3039",    # Slope 45 2 x 2
     (2, 4): "3037",    # Slope 45 2 x 4
     (3, 1): "4286",    # Slope 33 3 x 1
     (3, 2): "3298",    # Slope 33 3 x 2
+}
+
+# cheese slopes (2 plaques) : marches de 2 plaques
+SLOPES_2 = {
+    (1, 1): "54200",   # Slope 31 1 x 1 x 2/3
+    (2, 1): "85984",   # Slope 31 1 x 2 x 2/3
+    (2, 2): "15068",   # Slope 31 2 x 2 x 2/3
 }
 
 # tuile -> plaque de même empreinte (une pente a besoin de studs dessous)
@@ -49,8 +56,8 @@ def _tops(model) -> dict:
 
 
 def _height(model, b, part) -> int:
-    from ldraw_model import LDU_PER_LEVEL, _NOMINAL_H
-    return max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+    from ldraw_model import part_levels
+    return part_levels(part)
 
 
 def _color_above(model, x: int, z: int, top: int) -> str:
@@ -93,15 +100,19 @@ def apply(model, max_slopes: int = 2000) -> tuple:
         for d in ((0, -1), (0, 1), (-1, 0), (1, 0)):
             n = (cx + d[0], cz + d[1])
             level = tops.get(n)
-            # marche de 3 plaques exactement, palier bas libre
+            # marches de 3 plaques uniquement : les cheese slopes 2 plaques
+            # demandent une orientation de pose spécifique, désactivées tant
+            # que leur géométrie n'est pas validée au rendu.
             if level is None or high - level != 3:
                 continue
+            table = SLOPES
             if any(c in used for c in _footprint(n, d, 2, 1, 1)):
                 continue
             # choisit la plus grande pente qui tient sur le palier
             chosen = None
-            for depth, width in ((3, 2), (3, 1), (2, 4), (2, 2), (2, 1)):
-                if (depth, width) not in SLOPES:
+            sizes = ((3, 2), (3, 1), (2, 4), (2, 2), (2, 1))
+            for depth, width in sizes:
+                if (depth, width) not in table:
                     continue
                 for sign in (1, -1):
                     cells = _footprint(n, d, depth, width, sign)
@@ -120,7 +131,7 @@ def apply(model, max_slopes: int = 2000) -> tuple:
             if not chosen:
                 continue
             depth, width, sign, cells = chosen
-            pid = SLOPES[(depth, width)]
+            pid = table[(depth, width)]
             rot = _ROT[d]
             x, z = _origin(n, d, depth, width, sign)
             color = _color_above(model, cx, cz, high)

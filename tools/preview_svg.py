@@ -49,8 +49,8 @@ def _project(x: float, y: float, z: float) -> tuple[float, float]:
 
 
 def _part_height(model, b: dict, part: dict) -> int:
-    from ldraw_model import LDU_PER_LEVEL, _NOMINAL_H
-    return max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+    from ldraw_model import part_levels
+    return part_levels(part)
 
 
 def _payload(model, indices=None) -> list[dict]:

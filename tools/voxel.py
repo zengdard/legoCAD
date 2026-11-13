@@ -450,7 +450,7 @@ def from_ldr(path: str | Path) -> VoxelGrid:
     fréquente parmi les pièces qui la couvrent (gère les pièces qui se
     chevauchent dans les modèles LDraw, ex. pentes). Les sous-modèles MPD
     sont développés récursivement."""
-    from ldraw_model import LDU_PER_LEVEL, STUD, _NOMINAL_H, _part_data
+    from ldraw_model import LDU_PER_LEVEL, STUD, _part_data, part_levels
 
     counts: dict[tuple, dict] = {}
     models, root = _ldr_lines(path)
@@ -460,7 +460,7 @@ def from_ldr(path: str | Path) -> VoxelGrid:
             continue
         sx = max(1, round(data["studs_x"]))
         sz = max(1, round(data["studs_z"]))
-        h = max(1, _NOMINAL_H.get(data["kind"], 24) // LDU_PER_LEVEL)
+        h = part_levels(data)
         # rotation 90° : la matrice échange les axes x et z
         rotated = abs(mat[0]) < 0.5
         dx, dz = (sz, sx) if rotated else (sx, sz)
@@ -485,7 +485,7 @@ def from_model(model) -> VoxelGrid:
     for b in model.bricks:
         part = model.part(b["part_id"])
         sx, sz = model._footprint(part, b["rot"])
-        h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+        h = part_levels(part)
         for cx in range(b["x"], b["x"] + sx):
             for cz in range(b["z"], b["z"] + sz):
                 for cy in range(b["y"], b["y"] + h):

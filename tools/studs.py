@@ -22,7 +22,7 @@ Le sol (y=0) est traité comme un support (table ou plaque de base).
 """
 from __future__ import annotations
 
-from ldraw_model import LDU_PER_LEVEL, _NOMINAL_H
+from ldraw_model import LDU_PER_LEVEL, part_levels
 
 # Pièces dont le dessus n'a pas de tenons : rien ne peut s'y fixer.
 _NO_TOP_STUDS = ("tile", "smooth", "printed tile", "grille")
@@ -46,7 +46,7 @@ def part_geometry(model, index: int) -> dict:
     b = model.bricks[index]
     part = model.part(b["part_id"])
     sx, sz = model._footprint(part, b["rot"])
-    h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+    h = part_levels(part)
     cells = frozenset((b["x"] + dx, b["z"] + dz)
                       for dx in range(sx) for dz in range(sz))
     return {
@@ -219,7 +219,8 @@ def report(model) -> dict:
 
 
 _FAMILY_PATTERNS = (
-    ("snot", ("stud on side", "studs on side", "stud on the side")),
+    ("snot", ("stud on side", "studs on side", "stud on the side",
+              "bracket", "headlight", "stud on")),
     ("ball", ("ball", "socket", "soccer")),
     ("hinge", ("hinge", "clip", "bar ", "handle")),
     ("axle", ("axle", "pin ", "technic", "beam", "gear", "bush")),

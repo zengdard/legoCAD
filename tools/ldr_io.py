@@ -20,7 +20,7 @@ from pathlib import Path
 
 import voxel
 from ldraw_model import (CollisionError, LDrawModel, UnknownPartError,
-                         _NOMINAL_H, LDU_PER_LEVEL, STUD)
+                         LDU_PER_LEVEL, STUD, part_levels)
 
 
 def _y_rotation(mat: tuple) -> int | None:
@@ -50,7 +50,7 @@ def _nominal_height(part_id: str) -> int:
     data = _part_data(part_id)
     if not data:
         return 3
-    return max(1, _NOMINAL_H.get(data.get("kind", ""), 24) // LDU_PER_LEVEL)
+    return part_levels(data)
 
 
 def read_parts(path: str | Path) -> tuple[list[dict], dict]:

@@ -34,11 +34,27 @@ COLORS = _catalog["colors"]
 _sys_path_added = False
 
 
+# Quelques pièces dont la hauteur réelle diffère de la famille LDraw
+# (les « cheese slopes » 2/3 de brique font 2 plaques, pas 3).
+_PART_LEVELS = {"54200": 2, "85984": 2, "15068": 2}
+
+
+def part_levels(part: dict) -> int:
+    """Hauteur de construction d'une pièce, en plaques (1 brique = 3)."""
+    if part.get("levels"):
+        return int(part["levels"])
+    return max(1, _NOMINAL_H.get(part.get("kind", ""), 24)
+               // LDU_PER_LEVEL)
+
+
 def _part_data(part_id: str) -> dict | None:
     """Fiche unifiée d'une pièce : catalogue curé d'abord, index complet ensuite."""
     global _sys_path_added
     if part_id in PARTS:
-        return PARTS[part_id]
+        data = dict(PARTS[part_id])
+        if part_id in _PART_LEVELS:
+            data["levels"] = _PART_LEVELS[part_id]
+        return data
     if not _sys_path_added:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         _sys_path_added = True
@@ -58,6 +74,8 @@ def _part_data(part_id: str) -> dict | None:
         "studs_z": round(dz / 20, 2),
         "height_brick_units": round(info["height_ldu"] / 24, 3),
         "kind": info["family"] if info["family"] != "other" else "brick",
+        "levels": _PART_LEVELS.get(part_id,
+                                   max(1, info["height_ldu"] // LDU_PER_LEVEL)),
     }
 
 
@@ -115,7 +133,7 @@ class LDrawModel:
             self.warnings.append(
                 f"{part_id} ({part['desc']}) a une empreinte non entière "
                 f"({part['studs_x']}x{part['studs_z']} studs) : arrondie à {sx}x{sz}.")
-        level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+        level_h = part_levels(part)
         try:
             self._check_collision(x, z, y, sx, sz, level_h, part)
         except CollisionError:
@@ -267,7 +285,7 @@ class LDrawModel:
         for i, b in enumerate(self.bricks):
             part = self.part(b["part_id"])
             sx, sz = self._footprint(part, b["rot"])
-            level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+            level_h = part_levels(part)
             cells = [(cx, cy, cz)
                      for cx in range(b["x"], b["x"] + sx)
                      for cz in range(b["z"], b["z"] + sz)
@@ -301,7 +319,7 @@ class LDrawModel:
             if i in floating:
                 continue
             part = self.part(b["part_id"])
-            level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+            level_h = part_levels(part)
             heights[i] = level_h
             for (cx, cy, cz) in cells_per[i]:
                 if cy == b["y"] + level_h - 1:
@@ -311,7 +329,7 @@ class LDrawModel:
             b = self.bricks[i]
             part = self.part(b["part_id"])
             sx, sz = self._footprint(part, b["rot"])
-            level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+            level_h = part_levels(part)
             cols = [(cx, cz) for cx in range(b["x"], b["x"] + sx)
                     for cz in range(b["z"], b["z"] + sz)]
             y_new = max((tops.get(c, 0) for c in cols), default=0)
@@ -328,7 +346,7 @@ class LDrawModel:
         for i, b in enumerate(self.bricks):
             part = self.part(b["part_id"])
             sx, sz = self._footprint(part, b["rot"])
-            level_h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+            level_h = part_levels(part)
             for cx in range(b["x"], b["x"] + sx):
                 for cz in range(b["z"], b["z"] + sz):
                     for cy in range(b["y"], b["y"] + level_h):
@@ -388,7 +406,7 @@ class LDrawModel:
         dz = max(dz, 1.0)
         cx = (b["x"] + dx / 2.0 - 0.5) * STUD
         cz = (b["z"] + dz / 2.0 - 0.5) * STUD
-        cy = -(b["y"] * LDU_PER_LEVEL) - _NOMINAL_H.get(part["kind"], 24) / 2.0
+        cy = -(b["y"] * LDU_PER_LEVEL) - part_levels(part) * LDU_PER_LEVEL / 2.0
         rot = b["rot"]
         if rot == 0:
             mat = "1 0 0 0 1 0 0 0 1"

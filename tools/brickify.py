@@ -79,6 +79,7 @@ class BrickifyOptions:
     repair_islands: bool = True
     slopes: bool = True          # convertir les marches de 3 plaques en pentes
     foundation: bool = True      # plaque de fond 4x4/4x8 (pièces 2D, liaisons)
+    repair_gaps: bool = True     # plaques 4x4/2x4 pour les débords en coin
     tile_cap: bool = True        # finition : une plaque de tile sur chaque sommet
     report_levels: bool = False
 
@@ -266,6 +267,56 @@ def _foundation(model: LDrawModel, cells: set, colors: dict, y: int,
         else:
             gaps.append((x0, z0))
     return placed, gaps
+
+
+def _repair_gaps(model: LDrawModel, gaps: set, cells: dict, surface: dict,
+                 surface_part: dict) -> int:
+    """Comble les cellules non posées par une plaque tenue par un support.
+
+    Un débord de coin de 2 studs est souvent refusé par le tiler (aucune
+    pièce 1×N/2×N ne peut l'atteindre). Une plaque 4×4 ou 2×4 posée au
+    niveau du trou, qui couvre le trou ET une cellule supportée, le rend
+    constructible. C'est une réparation **locale**, pas un remplissage
+    arbitraire : chaque plaque garde au moins un stud posé.
+    """
+    from ldraw_model import LDU_PER_LEVEL
+    placed = 0
+    sizes = ((4, 4, "3031", 0), (4, 2, "3020", 0), (2, 4, "3020", 90),
+             (2, 2, "3022", 0), (1, 4, "3710", 90), (1, 2, "3023", 90),
+             (1, 1, "3024", 0))
+    for (gx, gy, gz) in sorted(set(gaps)):
+        if (gx, gy, gz) in model._occupied:
+            continue
+        color = cells.get((gx, gy, gz), "15")
+        best = None
+        for (w, d, pid, rot) in sizes:
+            # essaie les 4 orientations du rectangle autour du trou
+            for ox in (0, -w + 1):
+                for oz in (0, -d + 1):
+                    x0, z0 = gx + ox, gz + oz
+                    rect = {(x, z) for x in range(x0, x0 + w)
+                            for z in range(z0, z0 + d)}
+                    if (gx, gz) not in rect:
+                        continue
+                    if any((x, gy, z) in model._occupied for x, z in rect):
+                        continue
+                    if not any(surface.get((x, z)) == gy for x, z in rect):
+                        continue
+                    best = (pid, x0, z0, rot, rect)
+                    break
+                if best:
+                    break
+            if best:
+                break
+        if not best:
+            continue
+        pid, x0, z0, rot, rect = best
+        if model.try_place(pid, x0, z0, gy, color, rot):
+            for (x, z) in rect:
+                surface[(x, z)] = gy + 1
+                surface_part[(x, z)] = len(model.bricks) - 1
+            placed += 1
+    return placed
 
 
 def _tile_layer(model: LDrawModel, cells: set, colors: dict, y: int, h: int,
@@ -491,6 +542,21 @@ def _brickify_once(grid: VoxelGrid, name: str,
             layer_index += 1
         y += 1
 
+    repaired = 0
+    if opts.repair_gaps:
+        from ldraw_model import part_levels
+        covered_now = set()
+        for b in model.bricks:
+            part = model.part(b["part_id"])
+            sx, sz = model._footprint(part, b["rot"])
+            h = part_levels(part)
+            for cx in range(b["x"], b["x"] + sx):
+                for cz in range(b["z"], b["z"] + sz):
+                    for cy in range(b["y"], b["y"] + h):
+                        covered_now.add((cx, cy, cz))
+        repaired = _repair_gaps(model, set(cells) - covered_now, cells,
+                                surface, surface_part)
+
     # pentes sur les marches de 3 plaques (toits, capots, nez)
     slope_stats = {"slopes": 0}
     if opts.slopes:
@@ -510,8 +576,8 @@ def _brickify_once(grid: VoxelGrid, name: str,
         sx, sz = model._footprint(part, b["rot"])
         h = 3 if part["kind"] == "brick" and not part["desc"].lower().startswith("plate") else 1
         # hauteur réelle (les tiles/plates font 1 plaque)
-        from ldraw_model import _NOMINAL_H, LDU_PER_LEVEL
-        h = max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
+        from ldraw_model import part_levels
+        h = part_levels(part)
         for cx in range(b["x"], b["x"] + sx):
             for cz in range(b["z"], b["z"] + sz):
                 for cy in range(b["y"], b["y"] + h):
@@ -537,6 +603,7 @@ def _brickify_once(grid: VoxelGrid, name: str,
         "tipping_joints": stab.get("tipping_joints", []),
         "single_stud": len(stab.get("single_stud", [])),
         "slopes": slope_stats.get("slopes", 0),
+        "repaired_gaps": repaired,
         "connectors": stab.get("families", {}).get("counts", {}),
         "bounds": model.bounds(),
     }
