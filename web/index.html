@@ -215,7 +215,7 @@ const state = {shape: "house", tab: "shape", busy: false, health: null};
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-const ICONS = {house:"🏠", rocket:"🚀", car:"🚗", duck:"🦆", tree:"🌲", brick:"🧱", spaceship:"🛸", mosaic:"🖼️"};
+const ICONS = {house:"🏠", rocket:"🚀", car:"🚗", duck:"🦆", tree:"🌲", brick:"🧱", spaceship:"🛸", castle:"🏰", mosaic:"🖼️"};
 
 async function boot(){
   try{

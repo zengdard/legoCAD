@@ -205,6 +205,86 @@ def spaceship(body: str = LGRAY, wing: str = BLUE,
     return g.normalize()
 
 
+def castle(size: int = 26, wall_h: int = 9, color: str = LGRAY,
+           stone: str = DGRAY, roof: str = DARKBLUE) -> VoxelGrid:
+    """Château fort : enceinte crénelée, tours d'angle, donjon, porte et douve.
+
+    Le château est **plein** (pas de plafond suspendu) : les murs, tours et
+    donjon reposent sur une plateforme de 3 plaques. Les merlons sont des
+    colonnes de 3 plaques sur le chemin de ronde ; les toits des tours sont
+    des pyramides étagées (chaque niveau repose sur le précédent), donc
+    constructibles et compatibles avec la passe de pentes.
+    """
+    g = VoxelGrid()
+    g.box(0, 0, 0, size, 3, size, stone)          # plateforme
+    # douve peinte sur le pourtour de la plateforme
+    g.paint_box(0, 2, 0, 2, 1, size, BLUE)
+    g.paint_box(size - 2, 2, 0, 2, 1, size, BLUE)
+    g.paint_box(2, 2, 0, size - 4, 1, 2, BLUE)
+    g.paint_box(2, 2, size - 2, size - 4, 1, 2, BLUE)
+
+    x0, z0 = 2, 2
+    x1, z1 = size - 3, size - 3
+    # enceinte (1 stud d'épaisseur)
+    g.box(x0, 3, z0, size - 4, wall_h, 1, color)
+    g.box(x0, 3, z1, size - 4, wall_h, 1, color)
+    g.box(x0, 3, z0 + 1, 1, wall_h, size - 6, color)
+    g.box(x1, 3, z0 + 1, 1, wall_h, size - 6, color)
+    # porte fermée : le mur reste plein (un trou de 3 studs exigerait un
+    # linteau porteur que le tiler ne garantit pas toujours) ; la porte est
+    # peinte sur la façade, avec un encadrement sombre.
+    gate_x = size // 2 - 1
+    g.paint_box(gate_x - 1, 2, z0, 5, 8, 1, DGRAY)   # encadrement
+    g.paint_box(gate_x, 3, z0, 3, 6, 1, BROWN)      # porte
+    g.box(gate_x, 3, 0, 3, 1, 3, BROWN)             # pont-levis
+    # tours d'angle (5x5), toits pyramidaux
+    towers = ((0, 0), (size - 5, 0), (0, size - 5), (size - 5, size - 5))
+    for (tx, tz) in towers:
+        g.box(tx, 3, tz, 5, 18, 5, color)
+        _castle_pyramid(g, tx + 2, tz + 2, 5, 21, roof)
+        # meurtrières
+        for (wx, wz) in ((tx + 1, tz), (tx + 4, tz), (tx + 1, tz + 4),
+                         (tx + 4, tz + 4)):
+            g.paint_box(wx, 9, wz, 1, 3, 1, "0")
+    # tours de porte (4x4)
+    for tx in (size // 2 - 5, size // 2 + 2):
+        g.box(tx, 3, 0, 4, 15, 4, color)
+        _castle_crenellate(g, tx, 0, 4, 4, 18, color)
+    # donjon central 8x8
+    kx = kz = size // 2 - 4
+    g.box(kx, 3, kz, 8, 21, 8, color)
+    _castle_crenellate(g, kx, kz, 8, 8, 24, color)
+    # mâts + drapeau sur le donjon
+    pole_x, pole_z = kx + 3, kz + 3
+    g.box(pole_x, 24, pole_z, 2, 8, 1, DGRAY)      # mât 1x2 (2 appuis)
+    g.box(pole_x, 31, pole_z, 3, 1, 2, RED)        # drapeau 3x2
+    g.paint_box(pole_x + 1, 31, pole_z + 1, 1, 1, 1, YELLOW)
+    # crénelations de l'enceinte (merlons d'un stud)
+    _castle_crenellate(g, x0, z0, size - 4, size - 4, 3 + wall_h, color)
+    return g.normalize()
+
+
+def _castle_crenellate(g: VoxelGrid, x: int, z: int, w: int, d: int,
+                       y: int, color: str) -> None:
+    """Merlons d'un stud sur le périmètre (un sur deux), 3 plaques de haut."""
+    for i in range(0, w, 2):
+        g.box(x + i, y, z, 1, 3, 1, color)
+        g.box(x + i, y, z + d - 1, 1, 3, 1, color)
+    for j in range(1, d - 1, 2):
+        g.box(x, y, z + j, 1, 3, 1, color)
+        g.box(x + w - 1, y, z + j, 1, 3, 1, color)
+
+
+def _castle_pyramid(g: VoxelGrid, cx: int, cz: int, size: int, y: int,
+                    color: str) -> None:
+    """Toit pyramidal étagé : chaque niveau est un sous-ensemble du précédent."""
+    s = size
+    while s > 0:
+        g.box(cx - s // 2, y, cz - s // 2, s, 3, s, color)
+        y += 3
+        s -= 2
+
+
 def brick(width: int = 4, depth: int = 2) -> VoxelGrid:
     """Une brique géante (démo minimale)."""
     return VoxelGrid().box(0, 0, 0, width, 3, depth, RED)
@@ -245,6 +325,7 @@ SHAPES = {
     "car": car,
     "tree": tree,
     "brick": brick,
+    "castle": castle,
     "spaceship": spaceship,
     "mosaic": mosaic,
 }

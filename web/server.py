@@ -51,6 +51,8 @@ EXAMPLES = [
      "width": None},
     {"id": "spaceship", "label": "Vaisseau Classic Space",
      "desc": "Gris/bleu, verrière jaune, réacteurs", "width": None},
+    {"id": "castle", "label": "Château fort",
+     "desc": "Enceinte, tours, donjon, porte, douve", "width": 26},
     {"id": "brick", "label": "Brique géante", "desc": "Le test minimal",
      "width": 4},
 ]

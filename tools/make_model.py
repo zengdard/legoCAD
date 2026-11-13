@@ -132,7 +132,7 @@ def run(args) -> dict:
     if getattr(args, "pdf", False):
         try:
             import pdf_notice
-            pdf_path = pdf_notice.build(ldr, out / f"{name}.pdf")
+            pdf_path = pdf_notice.build(out / ldr.name, out / f"{name}.pdf")
             print(f"[pdf] {pdf_path}", flush=True)
         except Exception as exc:
             print(f"[pdf] ignoré : {exc}", flush=True)
@@ -199,7 +199,7 @@ def _run_native(args) -> dict:
     if getattr(args, "pdf", False):
         try:
             import pdf_notice
-            pdf_path = pdf_notice.build(ldr, out / f"{name}.pdf")
+            pdf_path = pdf_notice.build(out / ldr.name, out / f"{name}.pdf")
         except Exception as exc:
             print(f"[pdf] ignoré : {exc}", flush=True)
     if not args.no_notice:

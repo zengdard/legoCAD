@@ -117,7 +117,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/make_model.py` | CLI : forme/volume/.ldr/image → tous les livrables |
 | `tools/text_to_voxel.py` | texte → programme de volume (LLM) → volume, avec bac à sable |
 | `tools/voxel_runner.py` | exécution bornée du script de volume |
-| `tools/shapes.py` | formes procédurales : maison, fusée, vaisseau Classic Space, canard (mosaïque), voiture, sapin, brique, mosaïque |
+| `tools/shapes.py` | formes procédurales : maison, fusée, vaisseau Classic Space, château fort, canard (mosaïque), voiture, sapin, brique, mosaïque |
 | `tools/quality.py` | score multi-critères et contrôles |
 | `tools/availability.py` | calibration de la disponibilité sur le corpus OMR |
 | `tools/fetch_omr.py` | téléchargement reproductible d'un échantillon OMR |
