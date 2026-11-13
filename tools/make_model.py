@@ -47,6 +47,8 @@ def _grid_from_args(args) -> tuple[voxel.VoxelGrid, str]:
         kwargs = {}
         if args.width and args.shape in ("house", "brick"):
             kwargs["width"] = args.width
+        elif args.width and args.shape == "castle":
+            kwargs["size"] = args.width
         elif args.width:
             kwargs["height"] = args.width
         if args.shape == "mosaic":
