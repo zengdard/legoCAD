@@ -45,6 +45,7 @@ python3 tools/make_model.py --shape rocket --name fusee --video
 python3 tools/make_model.py --ldr models/mon_modele.ldr
 python3 tools/make_model.py --image photo.jpg --name portrait
 # depth réelle : Depth Anything V2 ONNX (téléchargé une fois)
+python3 tools/snot.py --out out/snot_demo.ldr   # démo SNOT 3D
 python3 tools/depth_onnx.py photo.jpg depth.png
 python3 tools/depth_to_voxel.py --depth depth.png --color photo.jpg \
   --width 32 --out models/relief.vox.json
@@ -73,12 +74,13 @@ imprimable), `*.bom.csv`, `*.bom.json`, `*.wanted_list.xml`, `report.json`.
 3. une pièce n'est acceptée que si **au moins un de ses studs** repose sur
    une pièce déjà posée ; l'accolement latéral ne compte pas.
 
-**v2.2** ajoute les pentes 45/33 et les tiles (toits/carrosseries), les
+**v2.3** ajoute les pentes 45/33 et les tiles (toits/carrosseries), les
 plaques 2D 4×4/4×8 (débords et liaisons), la réparation des débords,
-**Depth Anything V2 ONNX** (image → depth → relief constructible), les
-sous-ensembles/chapitres dans la notice, les familles de connecteurs
-(stud/SNOT/Technic/hinge) et les intégrations Rebrickable/LPub3D. LPub3D a
-été installé et testé (PDF de 24 pages pour la maison).
+**Depth Anything V2 ONNX** (image → depth → relief constructible, avec
+masque), un **prototype SNOT 3D** (frames de connecteurs, headlight brick,
+export LDraw), les sous-ensembles/chapitres dans la notice, les familles de
+connecteurs (stud/SNOT/Technic/hinge) et les intégrations
+Rebrickable/LPub3D. LPub3D a été installé et testé (PDF de 24 pages).
 
 Le détail de l'approche, l'état de l'art (BrickGPT, BrickWright, BrickNet,
 BrickBench, StableLego) et la feuille de route sont dans
@@ -124,6 +126,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/slopes.py` | pentes 45°/33° sur les marches de 3 plaques (toits, capots) |
 | `tools/depth_to_voxel.py` | depth map / modèle de profondeur → relief 2.5D constructible |
 | `tools/depth_onnx.py` | Depth Anything V2 (ONNX, 26 Mo) → depth map, sans PyTorch |
+| `tools/snot.py` | prototype SNOT 3D : frames de connecteurs, headlight brick, export LDraw |
 | `tools/rebrickable.py` | vérification de disponibilité en ligne (API Rebrickable v3) |
 | `tools/pdf_notice.py` | notice PDF via LPub3D (repli HTML) |
 | `tools/bench.py` | benchmark validité / couverture / stabilité (inspiré de BrickBench) |

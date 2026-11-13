@@ -149,8 +149,9 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
   les modules restants ont une page dédiée dans la notice
   (`tools/instructions.py`).
 - **SNOT / charnières** : les familles sont identifiées (`stud`, `snot`,
-  `axle`, `hinge`, `ball`) et signalées ; la génération SNOT complète
-  (rotations 3D) reste à faire.
+  `axle`, `hinge`, `ball`) et signalées ; `tools/snot.py` est un **prototype
+  3D** (frames de connecteurs, headlight brick, export LDraw) qui valide la
+  connexion latérale. L'intégration au compilateur volumique reste à faire.
 - **Vision** : `tools/depth_onnx.py` (Depth Anything V2 small, ONNX) produit
   une depth map réelle sans PyTorch ; `tools/depth_to_voxel.py` la transforme
   en relief 2.5D constructible. Un autre modèle se branche via `--depth-cmd`.

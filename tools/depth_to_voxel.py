@@ -39,7 +39,8 @@ from voxel import VoxelGrid, nearest_color  # noqa: E402
 def from_depth(depth: str | Path, color: str | Path | None = None,
                width: int = 32, max_height: int = 18,
                backing: int = 3, invert: bool = False,
-               min_height: int = 0) -> VoxelGrid:
+               min_height: int = 0, mask: str | Path | None = None,
+               auto_mask: float | None = None) -> VoxelGrid:
     """Relief 2.5D : colonnes de plaques + fond de briques.
 
     `depth` : image en niveaux de gris (clair = proche = haut).
@@ -56,6 +57,10 @@ def from_depth(depth: str | Path, color: str | Path | None = None,
     if color:
         c = Image.open(color).convert("RGBA").resize((w, h))
         cp = c.load()
+    mp = None
+    if mask:
+        m = Image.open(mask).convert("L").resize((w, h))
+        mp = m.load()
     grid = VoxelGrid()
     if backing:
         grid.box(0, 0, 0, w, backing, h, "72")
@@ -66,6 +71,10 @@ def from_depth(depth: str | Path, color: str | Path | None = None,
                 v = 1.0 - v
             height = round(v * max_height)
             if height <= min_height:
+                continue
+            if auto_mask is not None and v < auto_mask:
+                continue
+            if mp is not None and mp[x, z] < 128:
                 continue
             col = "15"
             if cp is not None:
@@ -106,6 +115,10 @@ def main():
     ap.add_argument("--max-height", type=int, default=18)
     ap.add_argument("--backing", type=int, default=3)
     ap.add_argument("--invert", action="store_true")
+    ap.add_argument("--mask", help="masque (SAM/U2Net) : noir = fond ignoré")
+    ap.add_argument("--auto-mask", type=float, default=None,
+                    help="seuil de profondeur (0..1) pour ignorer le fond")
+    ap.add_argument("--min-height", type=int, default=0)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     depth = args.depth
@@ -117,7 +130,8 @@ def main():
     if not depth:
         ap.error("indique --depth ou --depth-cmd")
     grid = from_depth(depth, args.color, args.width, args.max_height,
-                      args.backing, args.invert)
+                      args.backing, args.invert, args.min_height,
+                      mask=args.mask, auto_mask=args.auto_mask)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     grid.save(out)

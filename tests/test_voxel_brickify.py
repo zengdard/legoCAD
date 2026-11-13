@@ -166,6 +166,37 @@ def test_familles_de_connecteurs():
     assert fam["non_stud"] == []
 
 
+def test_snot_connexion_laterale(tmp_path):
+    import snot
+    scene = snot.demo()
+    assert len(scene.items) == 4
+    assert scene.connected()
+    path = scene.save(tmp_path / "snot.ldr")
+    text = path.read_text()
+    assert "4070.dat" in text
+    assert text.count("\n1 ") == 4
+
+
+def test_profondeur_avec_masque(tmp_path):
+    from PIL import Image
+    import depth_to_voxel
+    d = Image.new("L", (16, 16), 0)
+    px = d.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = 255 - (abs(x - 8) + abs(y - 8)) * 12
+    dp = tmp_path / "d.png"; d.save(dp)
+    m = Image.new("L", (16, 16), 0)
+    mp = m.load()
+    for y in range(4, 12):
+        for x in range(4, 12):
+            mp[x, y] = 255
+    mk = tmp_path / "m.png"; m.save(mk)
+    plain = depth_to_voxel.from_depth(dp, width=8, max_height=6)
+    masked = depth_to_voxel.from_depth(dp, width=8, max_height=6, mask=mk)
+    assert 0 < masked.count() < plain.count()
+
+
 def test_profondeur_vers_relief(tmp_path):
     from PIL import Image
     import depth_to_voxel
