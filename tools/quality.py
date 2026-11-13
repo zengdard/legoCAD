@@ -112,6 +112,12 @@ def score(model, report: dict, bom_meta: dict | None = None,
         {"name": "Allure des sets", "ok": realism >= 0.5,
          "detail": f"similarité {realism:.2f}"},
     ]
+    fam = (report.get("connectors") or {})
+    if any(k != "stud" for k in fam):
+        extra = ", ".join(f"{k}:{v}" for k, v in fam.items() if k != "stud")
+        checks.append({"name": "Connecteurs non-stud",
+                       "ok": True,
+                       "detail": f"{extra} (non modélisés)"})
     return {"overall": round(overall, 3), "values": values,
             "checks": checks, "weights": WEIGHTS, "validity": val,
             "grade": ("A" if overall >= 0.9 else "B" if overall >= 0.8

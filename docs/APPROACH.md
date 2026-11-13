@@ -134,17 +134,25 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 
 ## 4. Feuille de route priorisée
 
-### P0 — la qualité de surface (le plus visible)
+### P0 — la qualité de surface (fait en v2.1)
 
-- **Pentes** : `3040b` (2×1), `3039` (2×2), `3037` (2×4), `3045` (coin).
-  Détecter les marches du volume et poser une pente au lieu d'une plaque.
-  C'est ce qui fera passer une maison d'un « escalier » à un vrai toit.
-- **Tiles** sur les surfaces exposées (déjà partiellement fait).
-- **Pièces 2D** : 4×4 et 4×8 (plates) pour les débords en coin, aujourd'hui
-  limités à 1 stud par niveau.
-- **SNOT** (brackets) : rotation à 90° des faces, pour les détails verticaux.
-- **Sous-assemblages** : détecter les modules (tours, roues, ailes) et les
-  sortir en sous-modèles `.ldr` + callouts dans la notice.
+- **Pentes** : `3040b`, `3039`, `3037`, `4286`, `3298` posées sur les marches
+  de 3 plaques (`tools/slopes.py`). Les tuiles sous la pente sont remplacées
+  par des plaques pour que la pente soit réellement attachée.
+- **Tiles** : une plaque de finition (`tile_cap`) couvre chaque sommet ;
+  la surface est lisse, comme sur un set réel.
+- **Pièces 2D** : fondation 4×4/4×8 (`3031`/`3035`) pour relier les rangées
+  et couvrir les débords en coin.
+- **Sous-assemblages** : les liaisons à 1 seul stud sont coupées du graphe ;
+  les modules restants ont une page dédiée dans la notice
+  (`tools/instructions.py`).
+- **SNOT / charnières** : les familles sont identifiées (`stud`, `snot`,
+  `axle`, `hinge`, `ball`) et signalées ; la génération SNOT complète
+  (rotations 3D) reste à faire.
+- **Vision** : `tools/depth_to_voxel.py` transforme une depth map en relief
+  2.5D constructible ; un modèle externe se branche via `--depth-cmd`.
+- **Approvisionnement / PDF** : `tools/rebrickable.py` et
+  `tools/pdf_notice.py` (LPub3D si installé, sinon notice HTML).
 
 ### P1 — les sources de forme
 

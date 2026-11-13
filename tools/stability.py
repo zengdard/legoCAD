@@ -140,6 +140,7 @@ def analyze(model) -> dict:
         "islands": rep["islands"],
         "connections": rep["connections"],
         "resting": rep["resting"],
+        "families": rep.get("families", {}),
     }
 
 

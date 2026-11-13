@@ -155,6 +155,12 @@ class LDrawModel:
                     self._occupied[(cx, cy, cz)] = len(self.bricks) - 1
         return brick
 
+    def remove(self, index: int) -> dict:
+        """Retire une pièce (utilisé par les passes de détail : pentes)."""
+        brick = self.bricks.pop(index)
+        self._rebuild_occupied()
+        return brick
+
     def try_place(self, part_id: str, x: int, z: int, y: int = 0,
                   color: str = "4", rot: int = 0) -> bool:
         """Comme place() mais retourne False au lieu de lever une exception

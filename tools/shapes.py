@@ -43,7 +43,7 @@ def house(width: int = 16, depth: int = 12, levels: int = 3,
     # toit à deux pans : 1 brique de hauteur tous les 2 studs (≈ 40°)
     for x in range(width):
         for z in range(depth):
-            rise = (min(z, depth - 1 - z) * 3) // 2
+            rise = ((min(z, depth - 1 - z) // 2) * 3)
             for y in range(h, h + rise):
                 g.add(x, y, z, roof)
     # porte et fenêtres sur les deux faces avant/arrière
@@ -127,7 +127,7 @@ def car(body: str = RED, glass: str = LBLUE) -> VoxelGrid:
     la carrosserie doit reposer sur un châssis continu."""
     g = VoxelGrid()
     g.box(0, 0, 0, 18, 8, 8, body)            # châssis + carrosserie
-    g.box(4, 8, 1, 9, 4, 6, body)             # habitacle
+    g.box(4, 8, 1, 9, 3, 6, body)             # habitacle (3 plaques : pentes)
     g.paint_box(4, 9, 0, 3, 2, 1, glass)      # pare-brise avant
     g.paint_box(10, 9, 7, 3, 2, 1, glass)
     g.paint_box(4, 9, 1, 1, 2, 5, glass)      # vitres latérales

@@ -53,25 +53,31 @@ def _part_height(model, b: dict, part: dict) -> int:
     return max(1, _NOMINAL_H.get(part["kind"], 24) // LDU_PER_LEVEL)
 
 
-def _payload(model) -> list[dict]:
+def _payload(model, indices=None) -> list[dict]:
     """Briques avec leur empreinte, hauteur et couleur, prêtes à dessiner."""
     colors = _colors()
     out = []
-    for b in model.bricks:
+    for i, b in enumerate(model.bricks):
+        if indices is not None and i not in indices:
+            continue
         part = model.part(b["part_id"])
         sx, sz = model._footprint(part, b["rot"])
         h = _part_height(model, b, part)
         hexcol = colors.get(str(b["color"]), {}).get("hex", "#C91A09")
         out.append({"x": b["x"], "z": b["z"], "y": b["y"],
-                    "w": sx, "d": sz, "h": h, "hex": hexcol})
+                    "w": sx, "d": sz, "h": h, "hex": hexcol,
+                    "rot": b["rot"],
+                    "slope": "slope" in str(part.get("desc", "")).lower()
+                             or str(part.get("kind")) == "slope"})
     return out
 
 
 def render_svg(model, title: str | None = None,
                max_parts: int | None = None,
-               background: str | None = None) -> str:
-    """Rendu SVG d'un modèle (ou des `max_parts` premières pièces)."""
-    bricks = _payload(model)
+               background: str | None = None,
+               indices: set | None = None) -> str:
+    """Rendu SVG d'un modèle (ou d'un sous-ensemble de pièces)."""
+    bricks = _payload(model, indices=indices)
     if max_parts is not None:
         bricks = bricks[:max_parts]
     if not bricks:

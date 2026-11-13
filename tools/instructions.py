@@ -187,6 +187,16 @@ td.desc { color:var(--muted); font-size:12px; }
 .step .parts b { font-size:13px; }
 .warn { border-left:4px solid #f5a623; background:#fff8e8; padding:8px 10px;
         border-radius:0 8px 8px 0; margin:8px 0; font-size:12px; }
+.chapter { grid-column:1/-1; border-top:2px solid var(--ink); padding-top:8px;
+           margin:6px 0 2px; font-weight:800; text-transform:uppercase;
+           letter-spacing:.08em; font-size:12px; }
+.modules { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.module { border:1px solid var(--line); border-radius:12px; padding:10px; }
+.module img { width:100%; background:#1b1d21; border-radius:8px; }
+.module h3 { margin:8px 0 0; }
+.module .parts { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.module .p { display:flex; align-items:center; gap:4px; border:1px solid var(--line);
+             border-radius:8px; padding:2px 5px; font-size:11px; }
 .foot { position:absolute; bottom:6mm; left:14mm; right:14mm; color:var(--muted);
         font-size:10px; display:flex; justify-content:space-between; }
 @media print { body { background:#fff; } .page { margin:0; box-shadow:none; } }
@@ -202,12 +212,45 @@ def build(model, ldr: Path, out_dir: str | Path, title: str | None = None,
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    esc = html.escape
     title = title or model.name
     rows = bmod.build(model)
     meta = bmod.totals(rows)
     steps = _steps(model)
     avail = availability if availability is not None else \
         bmod.check_availability(rows)
+
+    # sous-ensembles (liaisons faibles) : modules à assembler à part
+    import studs
+    modules = studs.subassemblies(model)
+    module_cards = []
+    if modules:
+        mod_dir = out / "modules"
+        mod_dir.mkdir(parents=True, exist_ok=True)
+        import preview_svg
+        for mi, mod in enumerate(modules, start=1):
+            svg = preview_svg.render_svg(model, indices=set(mod),
+                                         title=f"module {mi}")
+            p = mod_dir / f"module{mi:02d}.svg"
+            p.write_text(svg, encoding="utf-8")
+            counts = _added([model.bricks[i] for i in mod])
+            chips = "".join(
+                f'<div class="p">{part_icon(model, c["part_id"], c["color"], 30)}'
+                f'<b>{c["count"]}×</b><span>{esc(c["part_id"])}</span></div>'
+                for c in counts[:8])
+            module_cards.append(
+                f'<article class="module"><img src="modules/{p.name}" '
+                f'alt="module {mi}"><h3>Sous-ensemble {mi}</h3>'
+                f'<div class="sub">{len(mod)} pièces</div>'
+                f'<div class="parts">{chips}</div></article>')
+    modules_page = ""
+    if module_cards:
+        modules_page = ('<section class="page"><h2>Sous-ensembles</h2>'
+                        '<div class="sub">Ces modules sont reliés au reste par '
+                        'un seul stud : assemble-les à part, puis fixe-les au '
+                        'modèle principal.</div>'
+                        '<div class="modules">' + "".join(module_cards) +
+                        '</div></section>')
 
     images: list[Path | None] = [None] * len(steps)
     if render_steps:
@@ -216,7 +259,6 @@ def build(model, ldr: Path, out_dir: str | Path, title: str | None = None,
     if preview is None and (out / "preview.png").exists():
         preview = out / "preview.png"
 
-    esc = html.escape
     head = (f"<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\">"
             f"<title>{esc(title)} — notice</title><style>{_CSS}</style></head>"
             f"<body>")
@@ -260,7 +302,16 @@ def build(model, ldr: Path, out_dir: str | Path, title: str | None = None,
     # --- étapes --------------------------------------------------------- #
     step_pages = []
     cards = []
+    max_y = max((b["y"] for b in model.bricks), default=0)
+    chapter = None
     for k, ((a, b), img) in enumerate(zip(steps, images), start=1):
+        level = max((model.bricks[i]["y"] for i in range(a, b)), default=0)
+        label = ("Soubassement" if level <= 0 else
+                 "Structure" if level < max_y - 2 else "Finitions")
+        if label != chapter:
+            chapter = label
+            cards.append(
+                f'<div class="chapter"><span>{esc(label)}</span></div>')
         added = _added(model.bricks[a:b])
         parts_html = "".join(
             f'<div class="p">{part_icon(model, p["part_id"], p["color"], 34)}'
@@ -269,7 +320,7 @@ def build(model, ldr: Path, out_dir: str | Path, title: str | None = None,
         img_html = f'<img src="steps/{img.name}" alt="étape {k}">' if img else ""
         cards.append(
             f'<div class="step"><div><div class="num">Étape {k} / '
-            f'{len(steps)}</div>{img_html}</div>'
+            f'{len(steps)} · {esc(label)}</div>{img_html}</div>'
             f'<div><h3>Pièces ajoutées</h3><div class="parts">{parts_html}'
             f'</div></div></div>')
         if len(cards) == 4 or k == len(steps):
@@ -281,7 +332,8 @@ def build(model, ldr: Path, out_dir: str | Path, title: str | None = None,
 
     foot = ('<div class="foot"><span>legoCAD · pièces et couleurs réelles'
             '</span><span>Construis, vérifie, partage.</span></div>')
-    doc = head + cover + inventory + "".join(step_pages) + foot + "</body></html>"
+    doc = head + cover + inventory + modules_page + "".join(step_pages) + \
+        foot + "</body></html>"
     path = out / "notice.html"
     path.write_text(doc, encoding="utf-8")
     return path

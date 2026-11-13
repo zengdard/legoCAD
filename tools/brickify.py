@@ -77,6 +77,9 @@ class BrickifyOptions:
     alternate_axis: bool = True
     clean_colors: int = 3        # taille mini d'une tache de couleur (0 = off)
     repair_islands: bool = True
+    slopes: bool = True          # convertir les marches de 3 plaques en pentes
+    foundation: bool = True      # plaque de fond 4x4/4x8 (pièces 2D, liaisons)
+    tile_cap: bool = True        # finition : une plaque de tile sur chaque sommet
     report_levels: bool = False
 
 
@@ -225,6 +228,44 @@ def _axis_info(cells: set) -> dict:
         info[axis] = {"runs": runs, "single": single, "longest": longest,
                       "lanes": len(lanes)}
     return info
+
+
+def _foundation(model: LDrawModel, cells: set, colors: dict, y: int,
+                surface: dict, surface_part: dict) -> tuple[int, list]:
+    """Pose une plaque de fond 4×4/4×8 sur les grandes surfaces.
+
+    Deux plaques 2×4 côte à côte ne sont pas attachées : une grande plaque
+    4×4/4×8 (3031/3035, pièces réelles) relie les rangées. Les cellules qui
+    ne peuvent pas être couvertes par une grande plaque sont laissées au
+    tiler normal (1×N/2×N).
+    """
+    placed, gaps = 0, []
+    todo = set(cells)
+    candidates = ((8, 4, "3035", 0), (4, 4, "3031", 0),
+                  (4, 2, "3020", 0), (2, 4, "3020", 90),
+                  (2, 2, "3022", 0), (1, 4, "3710", 90),
+                  (1, 2, "3023", 90), (1, 1, "3024", 0))
+    for (x0, z0) in sorted(todo):
+        if (x0, z0) not in todo:
+            continue
+        color = colors[(x0, z0)]
+        for (w, d, pid, rot) in candidates:
+            rect = {(x, z) for x in range(x0, x0 + w)
+                    for z in range(z0, z0 + d)}
+            if not rect <= todo:
+                continue
+            if any(colors[c] != color for c in rect):
+                continue
+            if model.try_place(pid, x0, z0, y, color, rot):
+                for (x, z) in rect:
+                    surface[(x, z)] = y + 1
+                    surface_part[(x, z)] = len(model.bricks) - 1
+                todo -= rect
+                placed += 1
+                break
+        else:
+            gaps.append((x0, z0))
+    return placed, gaps
 
 
 def _tile_layer(model: LDrawModel, cells: set, colors: dict, y: int, h: int,
@@ -377,6 +418,19 @@ def _is_top(cells, y: int, h: int, grid_cells: set) -> bool:
 def _brickify_once(grid: VoxelGrid, name: str,
                     opts: BrickifyOptions) -> tuple[LDrawModel, dict]:
     """Compilation d'une grille déjà nettoyée (une passe)."""
+    cap_cells: set = set()
+    if opts.tile_cap:
+        # une plaque de finition (tile) sur chaque sommet : surface lisse
+        add = {}
+        tops: dict[tuple, int] = {}
+        for (x, yy, z) in grid.cells:
+            tops[(x, z)] = max(tops.get((x, z), 0), yy + 1)
+        for (x, z), t in tops.items():
+            color = grid.cells.get((x, t - 1, z), "15")
+            add[(x, t, z)] = color
+        cap_cells = set(add)
+        grid = VoxelGrid({**grid.cells, **add})
+
     model = LDrawModel(name)
     surface: dict[tuple, int] = {}
     surface_part: dict[tuple, int] = {}
@@ -386,6 +440,14 @@ def _brickify_once(grid: VoxelGrid, name: str,
     if not cells:
         return model, {"status": "EMPTY", "pieces": 0, "coverage": 0.0,
                        "gaps": [], "error": "grille vide"}
+
+    # plaque de fond sur la couche 0 (grandes surfaces uniquement)
+    foundation_gaps: list = []
+    if opts.foundation:
+        base_cells = {(x, z) for (x, yy, z) in cells if yy == 0}
+        base_colors = {c: cells[(c[0], 0, c[1])] for c in base_cells}
+        _n, foundation_gaps = _foundation(model, base_cells, base_colors,
+                                         0, surface, surface_part)
 
     y = 0
     y_max = max(c[1] for c in cells) + 1
@@ -410,6 +472,8 @@ def _brickify_once(grid: VoxelGrid, name: str,
                 col = [cells.get((x, y + k, z)) for k in range(3)]
                 if grows:
                     continue
+                if any((x, y + k, z) in cap_cells for k in range(3)):
+                    continue
                 if None not in col and len(set(col)) == 1 \
                         and surface.get((x, z), -1) <= y:
                     brickable.add((x, z))
@@ -426,6 +490,12 @@ def _brickify_once(grid: VoxelGrid, name: str,
             all_gaps.extend(g2)
             layer_index += 1
         y += 1
+
+    # pentes sur les marches de 3 plaques (toits, capots, nez)
+    slope_stats = {"slopes": 0}
+    if opts.slopes:
+        import slopes
+        model, slope_stats = slopes.apply(model)
 
     # ordre de montage
     steps = build_order.plan(model, opts.max_parts_per_step) if opts.add_steps \
@@ -466,6 +536,8 @@ def _brickify_once(grid: VoxelGrid, name: str,
         "unsupported": stab.get("unsupported", []),
         "tipping_joints": stab.get("tipping_joints", []),
         "single_stud": len(stab.get("single_stud", [])),
+        "slopes": slope_stats.get("slopes", 0),
+        "connectors": stab.get("families", {}).get("counts", {}),
         "bounds": model.bounds(),
     }
     return model, report

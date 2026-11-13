@@ -44,6 +44,10 @@ python3 tools/make_model.py --shape rocket --name fusee --video
 # importer un modèle existant ou une image
 python3 tools/make_model.py --ldr models/mon_modele.ldr
 python3 tools/make_model.py --image photo.jpg --name portrait
+python3 tools/depth_to_voxel.py --depth depth.png --color photo.jpg \
+  --width 32 --out models/relief.vox.json
+python3 tools/make_model.py --vox models/relief.vox.json --name relief
+python3 tools/make_model.py --shape house --name maison --pdf --rebrickable
 
 # texte -> volume -> briques (nécessite une clé LLM)
 export DEEPSEEK_API_KEY=sk-...
@@ -67,8 +71,14 @@ imprimable), `*.bom.csv`, `*.bom.json`, `*.wanted_list.xml`, `report.json`.
 3. une pièce n'est acceptée que si **au moins un de ses studs** repose sur
    une pièce déjà posée ; l'accolement latéral ne compte pas.
 
+**v2.1** ajoute les pentes et les tiles (toits/carrosseries), les plaques
+2D 4×4/4×8 (débords en coin et liaisons), la conversion **depth map →
+relief** (vision), les sous-ensembles dans la notice, les familles de
+connecteurs (stud/Technic/hinge/SNOT) et les hooks Rebrickable/LPub3D.
+
 Le détail de l'approche, l'état de l'art (BrickGPT, BrickWright, BrickNet,
-StableLego) et la feuille de route sont dans [`docs/APPROACH.md`](docs/APPROACH.md).
+BrickBench, StableLego) et la feuille de route sont dans
+[`docs/APPROACH.md`](docs/APPROACH.md).
 
 ---
 
@@ -107,6 +117,10 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/fetch_omr.py` | téléchargement reproductible d'un échantillon OMR |
 | `tools/lcd.py` | rendu + nomenclature de modèles LeoCAD 0.7 (`.lcd`), galerie Classic Space |
 | `tools/ldr_io.py` | import natif d'un `.ldr/.mpd` (conserve les pièces, poses axis-aligned) |
+| `tools/slopes.py` | pentes 45°/33° sur les marches de 3 plaques (toits, capots) |
+| `tools/depth_to_voxel.py` | depth map / modèle de profondeur → relief 2.5D constructible |
+| `tools/rebrickable.py` | vérification de disponibilité en ligne (API Rebrickable v3) |
+| `tools/pdf_notice.py` | notice PDF via LPub3D (repli HTML) |
 | `tools/bench.py` | benchmark validité / couverture / stabilité (inspiré de BrickBench) |
 | `web/server.py`, `web/index.html` | générateur en ligne (stdlib, Docker) |
 | `data/part_colors.json` | couples pièce/couleur observés dans 493 sets officiels |

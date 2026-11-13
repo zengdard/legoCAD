@@ -200,8 +200,10 @@ def report(model) -> dict:
               i not in unsupported]
 
     comps = components(model, sup)
+    fam = families(model)
     return {
         "geoms": geoms,
+        "families": fam,
         "support": sup,
         "connections": len(sup["edges"]),
         "islands": len(comps),
@@ -216,6 +218,84 @@ def report(model) -> dict:
     }
 
 
+_FAMILY_PATTERNS = (
+    ("snot", ("stud on side", "studs on side", "stud on the side")),
+    ("ball", ("ball", "socket", "soccer")),
+    ("hinge", ("hinge", "clip", "bar ", "handle")),
+    ("axle", ("axle", "pin ", "technic", "beam", "gear", "bush")),
+)
+
+
+def connector_family(part: dict) -> str:
+    """Famille de connecteur dominante d'une pièce (façon BrickNet).
+
+    stud  : brique/plaque/tuile/pente (le cas de 99 % de nos modèles) ;
+    axle  : Technic (pin, axe, beam) ;
+    hinge : charnière/clip/barre ;
+    ball  : rotule ;
+    fixed : pièce sans connexion étudiée (baseplate, décor).
+    """
+    desc = str(part.get("desc", "")).lower()
+    for family, words in _FAMILY_PATTERNS:
+        if any(w in desc for w in words):
+            return family
+    return "stud"
+
+
+def families(model) -> dict:
+    """Répartition des pièces par famille de connecteur."""
+    counts: dict[str, int] = {}
+    non_stud = []
+    for i, b in enumerate(model.bricks):
+        fam = connector_family(model.part(b["part_id"]))
+        counts[fam] = counts.get(fam, 0) + 1
+        if fam != "stud":
+            non_stud.append({"index": i, "part": b["part_id"],
+                             "family": fam,
+                             "desc": model.part(b["part_id"]).get("desc", "")})
+    return {"counts": counts, "non_stud": non_stud}
+
+
+def subassemblies(model, weak_studs: int = 1, min_size: int = 3) -> list:
+    """Sous-ensembles : composants séparés par des liaisons faibles.
+
+    On retire les arêtes de **1 seul stud** du graphe de connexions : ce sont
+    les charnières naturelles d'un modèle (cheminée, antenne, module
+    décoratif). Les groupes restants de taille >= min_size sont des
+    sous-assemblages candidats pour la notice (callouts).
+    """
+    sup = support(model)
+    n = len(model.bricks)
+    adj: list[set[int]] = [set() for _ in range(n)]
+    for e in sup["edges"]:
+        if e["studs"] > weak_studs:
+            adj[e["below"]].add(e["above"])
+            adj[e["above"]].add(e["below"])
+    seen: set[int] = set()
+    groups = []
+    for i in range(n):
+        if i in seen:
+            continue
+        stack = [i]
+        seen.add(i)
+        comp = set()
+        while stack:
+            k = stack.pop()
+            comp.add(k)
+            for nb in adj[k]:
+                if nb not in seen:
+                    seen.add(nb)
+                    stack.append(nb)
+        groups.append(comp)
+    groups.sort(key=len, reverse=True)
+    if len(groups) <= 1:
+        return []
+    main = groups[0]
+    if len(main) < 0.6 * n:
+        return []                     # deux moitiés : pas un « module »
+    return [sorted(g) for g in groups[1:] if len(g) >= min_size]
+
+
 def summary_line(rep: dict) -> str:
     """Résumé court pour les logs et le feedback."""
     bits = [f"{len(rep.get('geoms', []))} pièces",
@@ -227,4 +307,9 @@ def summary_line(rep: dict) -> str:
         bits.append(f"{len(rep['single_stud'])} tenues par 1 stud")
     if rep.get("resting"):
         bits.append(f"{len(rep['resting'])} posées sur du lisse")
+    fam = rep.get("families", {}).get("counts", {})
+    extra = {k: v for k, v in fam.items() if k != "stud"}
+    if extra:
+        bits.append("connecteurs " + ", ".join(f"{k}:{v}"
+                                               for k, v in extra.items()))
     return " | ".join(bits)

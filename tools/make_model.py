@@ -78,6 +78,7 @@ def run(args) -> dict:
     print(f"[volume] {grid.count()} voxels, taille {(sx, sy, sz)}", flush=True)
 
     opts = BrickifyOptions(tiles_on_top=not args.no_tiles,
+                           tile_cap=not getattr(args, "no_tile_cap", False),
                            bond="stack" if args.stack else "running",
                            add_steps=True,
                            max_parts_per_step=args.parts_per_step)
@@ -95,7 +96,7 @@ def run(args) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ldr, out / ldr.name)
 
-    bom = bmod.export_all(model, out, name)
+    bom = bmod.export_all(model, out, name, online=bool(getattr(args, "rebrickable", False)))
     avail = bom["meta"]["availability"]
 
     # aperçu : SVG isométrique immédiat, puis LeoCAD si disponible (plus joli)
@@ -127,6 +128,15 @@ def run(args) -> dict:
             availability=avail)
         print(f"[notice] {notice_path}", flush=True)
 
+    pdf_path = None
+    if getattr(args, "pdf", False):
+        try:
+            import pdf_notice
+            pdf_path = pdf_notice.build(ldr, out / f"{name}.pdf")
+            print(f"[pdf] {pdf_path}", flush=True)
+        except Exception as exc:
+            print(f"[pdf] ignoré : {exc}", flush=True)
+
     if args.video and not args.no_render:
         try:
             import render as rend
@@ -140,6 +150,7 @@ def run(args) -> dict:
         "ldr": str(out / ldr.name),
         "preview": str(preview) if preview else None,
         "notice": str(notice_path) if notice_path else None,
+        "pdf": str(pdf_path) if pdf_path else None,
         "bom": bom["meta"],
         "bricks": report,
         "score": sc,
@@ -175,7 +186,7 @@ def _run_native(args) -> dict:
     out = PROJECT / "out" / "web" / _slug(name)
     out.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ldr, out / ldr.name)
-    bom = bmod.export_all(model, out, name)
+    bom = bmod.export_all(model, out, name, online=bool(getattr(args, "rebrickable", False)))
     stab = stability.analyze(model)
     preview = out / "preview.svg"
     try:
@@ -184,6 +195,13 @@ def _run_native(args) -> dict:
     except Exception:
         preview = None
     notice_path = None
+    pdf_path = None
+    if getattr(args, "pdf", False):
+        try:
+            import pdf_notice
+            pdf_path = pdf_notice.build(ldr, out / f"{name}.pdf")
+        except Exception as exc:
+            print(f"[pdf] ignoré : {exc}", flush=True)
     if not args.no_notice:
         notice_path = notice.build(model, ldr, out, title=name,
                                    preview=preview,
@@ -215,6 +233,7 @@ def _run_native(args) -> dict:
         "name": name, "ldr": str(out / ldr.name),
         "preview": str(preview) if preview else None,
         "notice": str(notice_path) if notice_path else None,
+        "pdf": str(pdf_path) if pdf_path else None,
         "bom": bom["meta"], "bricks": report, "score": sc,
         "report": str(out / "report.json"), "source": {"mode": "ldr-native"},
     }
@@ -245,11 +264,16 @@ def main():
     ap.add_argument("--width", type=int, default=None)
     ap.add_argument("--parts-per-step", type=int, default=12)
     ap.add_argument("--no-tiles", action="store_true")
+    ap.add_argument("--no-tile-cap", action="store_true")
     ap.add_argument("--stack", action="store_true")
     ap.add_argument("--no-render", action="store_true")
     ap.add_argument("--no-notice", action="store_true")
     ap.add_argument("--no-notice-render", action="store_true")
     ap.add_argument("--video", action="store_true")
+    ap.add_argument("--pdf", action="store_true",
+                    help="notice PDF via LPub3D (si installé)")
+    ap.add_argument("--rebrickable", action="store_true",
+                    help="vérifier la disponibilité en ligne (REBRICKABLE_API_KEY)")
     ap.add_argument("--json", action="store_true", help="sortie JSON seule")
     args = ap.parse_args()
     result = run(args)

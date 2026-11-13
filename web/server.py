@@ -196,7 +196,7 @@ def _args(**kw):
                     no_render=bool(os.environ.get("LEGOCAD_NO_RENDER")),
                     no_notice=False,
                     no_notice_render=False, video=False, json=True,
-                    ldr_native=False)
+                    ldr_native=False, rebrickable=False)
     defaults.update(kw)
     return argparse.Namespace(**defaults)
 

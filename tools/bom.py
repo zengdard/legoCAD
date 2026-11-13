@@ -135,7 +135,8 @@ def to_bricklink_xml(rows: list[BomRow]) -> tuple[str, list]:
     return xml, sorted(set(missing))
 
 
-def check_availability(rows: list[BomRow], table: dict | None = None) -> dict:
+def check_availability(rows: list[BomRow], table: dict | None = None,
+                       online: bool = False) -> dict:
     """Part des couples pièce/couleur déjà vus dans de vrais sets.
 
     `table` = contenu de data/part_colors.json (chargé par défaut). Une
@@ -167,7 +168,7 @@ def check_availability(rows: list[BomRow], table: dict | None = None) -> dict:
                             "color_name": r.color_name, "count": r.count,
                             "confidence": "faible"})
     total = max(1, len(rows))
-    return {
+    result = {
         "checked": True,
         "source": table.get("meta", {}),
         "combos": len(rows),
@@ -177,6 +178,14 @@ def check_availability(rows: list[BomRow], table: dict | None = None) -> dict:
         "strict_score": round(observed / total, 3),
         "unknown": unknown,
     }
+    if online:
+        try:
+            from rebrickable import Rebrickable
+            rb = Rebrickable()
+            result["online"] = rb.verify_rows(rows)
+        except Exception as exc:
+            result["online"] = {"checked": False, "reason": str(exc)}
+    return result
 
 
 def piece_mix(rows: list[BomRow]) -> dict:
@@ -210,13 +219,15 @@ def mix_similarity(rows: list[BomRow], reference: dict | None = None) -> float:
 
 
 def export_all(model, out_dir: str | Path, name: str,
-               availability: dict | None = None) -> dict:
+               availability: dict | None = None,
+               online: bool = False) -> dict:
     """Écrit bom.csv, bom.json, wanted_list.xml et renvoie le récapitulatif."""
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     rows = build(model)
     xml, missing = to_bricklink_xml(rows)
-    avail = availability if availability is not None else check_availability(rows)
+    avail = availability if availability is not None else \
+        check_availability(rows, online=online)
     meta = {"name": name, **totals(rows),
             "availability": avail,
             "mix_similarity": mix_similarity(rows)}
