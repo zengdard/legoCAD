@@ -166,6 +166,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `web/server.py`, `web/index.html` | générateur en ligne (stdlib, Docker) |
 | `data/part_colors.json` | couples pièce/couleur observés dans 493 sets officiels |
 | `data/bricklink_colors.json` | correspondance LDraw → BrickLink |
+| `CHANGELOG.md` | journal des versions et du remaniement |
 
 ### Infrastructure partagée
 
