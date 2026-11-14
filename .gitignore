@@ -5,9 +5,7 @@ ldraw/
 # artefacts de génération
 out/
 renders/*
-!renders/chateau_llm.png
-!renders/voiture_llm.png
-!renders/cabane_solver.png
+!renders/.gitkeep
 
 # caches dérivés (régénérés par tools/parts_index.py / build_catalog.py)
 parts_index_cache.json

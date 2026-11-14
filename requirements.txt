@@ -5,7 +5,7 @@ Pillow>=10.0
 onnxruntime>=1.18
 # --- mode texte (LLM architecte / structure-as-code) ----------------------
 openai>=1.30
-# --- solveur CP-SAT (mode blueprint historique, optionnel) ----------------
+# --- solveur CP-SAT (pipeline v1 archivé, optionnel) ----------------------
 # ortools>=9.10
 # --- serveur MCP ----------------------------------------------------------
 # fastmcp>=0.4

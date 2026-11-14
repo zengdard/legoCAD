@@ -10,7 +10,6 @@ PROJECT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT / "tools"))
 
 from ldraw_model import LDrawModel  # noqa: E402
-import arch  # noqa: E402
 import build_order as bo  # noqa: E402
 
 

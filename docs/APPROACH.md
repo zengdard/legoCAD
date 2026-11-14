@@ -178,7 +178,8 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
   produit un volume.
 - **Boucle visuelle** : rendre 2-3 vues SVG/LeoCAD, demander à un VLM
   (« est-ce une fusée ? qu'est-ce qui manque ? »), corriger le volume.
-  C'est la boucle déjà présente dans `generate_script.py`, déplacée au
+  C'est la boucle déjà présente dans `archive/v1/tools/generate_script.py`,
+  déplacée au
   niveau du volume.
 - **Few-shot OMR** : injecter 2-3 extraits de sets réels dans le prompt
   (idiomes de pièces, proportions).

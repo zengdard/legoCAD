@@ -265,47 +265,6 @@ def generate_model(spec: dict) -> str:
 
 
 @mcp.tool
-def solve_blueprint(blueprint: dict, time_limit: float = 45.0) -> str:
-    """Mode solver : génère un modèle à partir d'un BLUEPRINT LEGO IR
-    (composants : wall / tower / slab / box), le solver CP-SAT place les
-    briques (schéma exact dans tools/lego_ir.py : BLUEPRINT_PROMPT).
-    Retourne le rapport déterministe : pièces, stabilité, amas, steps,
-    et la liste des problèmes à corriger dans le blueprint le cas échéant."""
-    import lego_ir as ir
-    import solver as sv
-    try:
-        bp, errors = ir.from_dict(blueprint)
-        if errors:
-            return json.dumps({"status": "INVALID_BLUEPRINT",
-                               "issues": errors}, ensure_ascii=False)
-        model, report = sv.solve_blueprint(bp, time_limit=time_limit)
-        if model is None:
-            return json.dumps(report, ensure_ascii=False)
-        ldr = PROJECT / "models" / f"{bp.name or 'solver_model'}.ldr"
-        model.save(ldr)
-        report["ldr_path"] = str(ldr)
-        return json.dumps(report, ensure_ascii=False)
-    except Exception as e:  # noqa: BLE001
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
-
-
-@mcp.tool
-def generate_solved(prompt: str, max_pieces: int = 300,
-                    make_video: bool = False) -> str:
-    """Mode solver complet : le prompt devient un blueprint (LLM archi-
-    tecte), le solver CP-SAT place les briques, avec boucle de correction
-    (2-3 tours). Nécessite DEEPSEEK_API_KEY. Retourne blueprint, rapport
-    du solver, chemins .ldr / aperçu / vidéo."""
-    import generate_solver as gs
-    try:
-        result = gs.generate(prompt, max_pieces=max_pieces,
-                             make_video=make_video)
-        return json.dumps(result, ensure_ascii=False)
-    except Exception as e:  # noqa: BLE001
-        return json.dumps({"error": str(e)}, ensure_ascii=False)
-
-
-@mcp.tool
 def render_preview(name: str, lat: float = 30, lon: float = 45) -> str:
     """Rend une image PNG du modèle <name>.ldr (généré par generate_model)."""
     ldr = PROJECT / "models" / f"{name}.ldr"

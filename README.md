@@ -5,12 +5,11 @@ modèle LDraw existant, puis produit **une notice, une nomenclature et un
 aperçu** — avec une garantie : chaque pièce est posée sur des studs, le
 modèle tient en un bloc, l'ordre de montage est vérifié.
 
-Deux pipelines coexistent :
-
-| Pipeline | Entrée | Quand l'utiliser |
-|---|---|---|
-| **v2 — volume → briques** (recommandé) | texte (LLM structure-as-code), image, `.vox.json`, `.ldr`, formes procédurales | modèles réels, notice, web |
-| v1 — blueprint sémantique + CP-SAT | blueprint JSON (murs/boîtes/tours) | recherche sur le solver, expérimentation |
+Le pipeline actif est **v2 — volume → briques** : texte (LLM
+structure-as-code), image, `.vox.json`, `.ldr` ou forme procédurale. L'ancien
+pipeline **v1** (blueprint sémantique + CP-SAT, templates, génération LLM
+one-shot) est conservé dans [`archive/`](archive/README.md) mais n'est plus
+maintenu.
 
 La validité suit le contrat de **BrickBench** (brickben.ch, 2026) : pièces
 réelles, zéro collision, zéro pièce flottante, **un seul composant**, stable.
@@ -117,14 +116,15 @@ la notice et les intégrations Rebrickable/LPub3D.
 
 Le détail de l'approche, l'état de l'art (BrickGPT, BrickWright, BrickNet,
 BrickBench, StableLego) et la feuille de route sont dans
-[`docs/APPROACH.md`](docs/APPROACH.md).
+[`docs/APPROACH.md`](docs/APPROACH.md). L'historique et les productions des
+versions précédentes sont dans [`archive/README.md`](archive/README.md).
 
 ---
 
 ## Installation
 
 ```bash
-pip install ortools openai fastmcp pillow
+pip install Pillow onnxruntime openai   # + fastmcp pour le serveur MCP
 # bibliothèque LDraw (CC BY 4.0, ~615 Mo, non incluse) :
 mkdir ldraw && cd ldraw
 curl -LO https://library.ldraw.org/library/updates/complete.zip && unzip complete.zip
@@ -156,10 +156,10 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/fetch_omr.py` | téléchargement reproductible d'un échantillon OMR |
 | `tools/lcd.py` | rendu + nomenclature de modèles LeoCAD 0.7 (`.lcd`), galerie Classic Space |
 | `tools/ldr_io.py` | import natif d'un `.ldr/.mpd` (conserve les pièces, poses axis-aligned) |
-| `tools/slopes.py` | pentes 45°/33° sur les marches de 3 plaques (toits, capots) |
+| `tools/slopes.py` | pentes 45°/33° (marches de 3 plaques) et cheese slopes 31° (2 plaques) |
 | `tools/depth_to_voxel.py` | depth map / modèle de profondeur → relief 2.5D constructible |
 | `tools/depth_onnx.py` | Depth Anything V2 (ONNX, 26 Mo) → depth map, sans PyTorch |
-| `tools/snot.py` | prototype SNOT 3D : frames de connecteurs, headlight brick, export LDraw |
+| `tools/snot.py` | SNOT : bannières 1×2 tenues par un tenon latéral (4070), frames de connecteurs, export LDraw |
 | `tools/rebrickable.py` | vérification de disponibilité en ligne (API Rebrickable v3) |
 | `tools/pdf_notice.py` | notice PDF via LPub3D (repli HTML) |
 | `tools/bench.py` | benchmark validité / couverture / stabilité (inspiré de BrickBench) |
@@ -167,96 +167,17 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `data/part_colors.json` | couples pièce/couleur observés dans 493 sets officiels |
 | `data/bricklink_colors.json` | correspondance LDraw → BrickLink |
 
-### Modules hérités (pipeline v1, toujours disponibles)
+### Infrastructure partagée
 
-| `tools/build_catalog.py` | Extrait les dimensions réelles des pièces curées depuis la bibliothèque LDraw officielle → `pieces_catalog.json` |
-| `tools/parts_index.py` | Index des ~23 000 pièces de la bibliothèque complète (descriptions, familles, hauteurs) + cache `parts_index_cache.json` |
-| `tools/arch.py` | Primitives d'architecture : toits à deux pans, toits pyramidaux, créneaux, escaliers |
-| `tools/ldraw_model.py` | Générateur : grille de studs, détection de collision, steps, export `.ldr`. Accepte toute pièce LDraw, pas seulement le catalogue curé |
-| `tools/render.py` | Rendu headless LeoCAD (aperçu, steps, turntable) + assemblage FFmpeg |
-| `tools/mcp_server.py` | Serveur MCP : session itérative (`session_*`), recherche (`search_parts`, `get_part`), one-shot (`generate_model`), rendu (`render_preview`, `render_video`) |
-| `tools/generate.py` | Client autonome texte → vidéo (DeepSeek) |
-| `ldraw/` | Bibliothèque LDraw officielle (~25 000 pièces) |
-| `models/`, `renders/` | Modèles générés et rendus |
-
-## Usage A : client autonome (DeepSeek)
-
-```bash
-export DEEPSEEK_API_KEY=sk-...
-python3 tools/generate.py "une petite maison rouge avec un toit vert et une cheminée"
-# → models/<nom>.ldr, renders/<nom>.png, renders/<nom>.mp4
-```
-
-## Usage A'' : mode script (le modèle code, le harness exécute)
-
-Approche Blender MCP / OpenSCAD : DeepSeek écrit un **script Python** contre
-l'API `LDrawModel` (boucles, fonctions, symétries), le sandbox l'exécute
-(timeout 120 s, imports système/réseau refusés), les erreurs sont renvoyées
-au modèle pour correction (2-3 tours en pratique), puis rendu.
-
-```bash
-export DEEPSEEK_API_KEY=sk-...
-python3 tools/generate_script.py "un château avec deux tours crénelées"
-python3 tools/generate_script.py "..." --visual-rounds 2   # + critique visuelle
-```
-
-**Boucle visuelle** : après un build réussi, un modèle vision (`deepseek-flash`,
-qui accepte les images) examine 3 rendus et liste les écarts avec la demande ;
-le codeur corrige et le harness ne garde la correction que si elle ne dégrade
-pas le score géométrique (briques flottantes/rejetées) ni ne supprime plus de
-25 % du modèle. Modèles configurables :
-
-```bash
-export DEEPSEEK_MODEL=deepseek-chat          # codeur
-export DEEPSEEK_VISION_MODEL=deepseek-flash  # critique visuelle
-```
-
-Outils MCP correspondants : `build_from_script(name, code)` + `build_screenshot`.
-C'est le mode recommandé pour les formes libres ; `sandbox_runner.py` isole
-l'exécution (sous-processus borné, imports dangereux interdits) et sauvegarde
-le dernier script dans `out/last_build_script.py`.
-
-**Note** : en mode sandbox les collisions sont **fatales** (le modèle doit
-corriger sa géométrie) ; les doublons exacts sont ignorés silencieusement pour
-éviter les boucles stériles. L'auto-décalage (`model.autofit`) n'est utilisé
-que par le mode one-shot, où le LLM ne boucle pas — l'activer dans le sandbox
-produit des modèles incohérents. Les erreurs renvoyées au modèle incluent la
-**ligne fautive** du script (traceback) : c'est ce qui lui permet de corriger
-du premier coup.
-
-### Convention des pièces (piège n°1)
-
-Dans le nom LDraw « Brick A x B », **A est la profondeur (z) et B la largeur
-(x)** : une « Brick 2 x 4 » (3001) occupe 4 studs en x et 2 en z. Un LLM qui
-suppose l'inverse produit des chevauchements systématiques. `find_parts()`
-renvoie donc `footprint_x` / `footprint_z` pour lever l'ambiguïté.
-
-### Primitives de haut niveau
-
-Exposées au script (et donc au LLM) pour éviter les collisions par construction :
-
-| Méthode | Rôle |
-|---|---|
-| `model.slab(x, z, w, d, y, color, layers, openings)` | pave un rectangle (mur = d=1, sol/toit = layers=1, `openings` pour portes/fenêtres) |
-| `model.column(x, z, layers, color, part)` | empile une tour/pilier |
-| `model.clearance(x, z, w, d, layers, y)` | teste si un volume est libre |
-| `model.connectivity()` | nombre d'amas détachés (`islands` : 1 = modèle d'un seul bloc) |
-| `model.stability()` | rapport de stabilité physique (voir ci-dessous) |
-
-`tools/arch.py` — formes composées que les LLM ratent systématiquement :
-
-| Primitive | Rôle |
-|---|---|
-| `arch.pitched_roof(x, z, w, d, y, color, ridge)` | toit à deux pans, rives en pente, faîtière |
-| `arch.pyramid_roof(x, z, size, y, color)` | toit pyramidal / conique de tour (pièce d'angle 3045 + cône 98100) |
-| `arch.crenellate(x, z, w, d, y, color)` | créneaux sur un chemin de ronde |
-| `arch.stairs(x, z, height, color, direction)` | escalier |
-| `arch.hull/wing/cockpit/engine` | éléments de vaisseau : fuselage effilé, aile, verrière, propulseur |
-
-| `arch.hull(x, z, w, d, layers, color, y)` | fuselage plein avec nez effilé vers -z |
-| `arch.wing(x, z, w, d, y, color)` | aile plate à bord d'attente en pente |
-| `arch.cockpit(x, z, w, d, y, color)` | verrière vitrée |
-| `arch.engine(x, z, w, d, y, color)` | propulseur avec tuyère lumineuse |
+| `tools/ldraw_model.py` | Générateur : grille de studs, collisions, steps, export `.ldr`, pièces SNOT hors grille. Accepte toute pièce LDraw |
+| `tools/build_catalog.py` | Dimensions réelles des pièces curées → `pieces_catalog.json` |
+| `tools/parts_index.py` | Index des ~23 000 pièces LDraw + cache |
+| `tools/render.py` | Rendu headless LeoCAD (aperçu, steps, turntable) |
+| `tools/mcp_server.py` | Serveur MCP v2 : sessions, recherche de pièces, génération, rendu |
+| `archive/` | Pipeline v1, anciens modèles et rendus — voir [`archive/README.md`](archive/README.md) |
+| `ldraw/` | Bibliothèque LDraw officielle (~25 000 pièces, non versionnée) |
+| `models/` | Modèles de démonstration (`chateau.ldr`, `maison.ldr`) |
+| `renders/` | Sorties de rendu locales (ignoré, sauf `.gitkeep`) |
 
 ## Ordre de montage
 
@@ -299,57 +220,6 @@ Tous les rendus (aperçu, frames de construction, rotation) calculent
 automatiquement le cadre englobant le modèle (`render.frame_of`) : plus de
 modèle minuscule ou hors champ. Le cadre est calculé une fois sur le modèle
 final, donc la caméra reste stable pendant le timelapse.
-
-## Usage A' : mode templates (recommandé)
-
-Le LLM ne choisit que des **paramètres** (dimensions, couleurs, style) ; la
-géométrie est générée par du code déterministe — résultat toujours propre.
-
-```bash
-export DEEPSEEK_API_KEY=sk-...
-python3 tools/generate_template.py "une grande maison beige, toit rouge, porte bleue"
-python3 tools/generate_template.py "maison" --params '{"type": "house", "width": 18}'  # sans LLM
-```
-
-Archétypes disponibles dans `tools/templates.py` : `house` (murs, toit à
-gradins deux pans, porte, fenêtres vitrées), `tower` (créneaux + toit
-pyramidal), `spaceship` (fuselage effilé, ailes, cockpit, propulseurs). Le LLM
-voit uniquement un schéma de paramètres (~100 tokens) au lieu de générer des
-centaines de briques : coût dérisoire et zéro erreur géométrique.
-
-## Usage C : mode solver (LLM architecte + CP-SAT constructeur)
-
-Le LLM ne place **jamais** de briques : il produit un **blueprint LEGO IR**
-(composants `wall` / `tower` / `slab` / `box` en studs, objectifs globaux —
-`tools/lego_ir.py`), le **solver OR-Tools CP-SAT** (`tools/solver.py`) choisit
-les briques concrètes : couverture exacte de chaque cellule (zéro collision
-par construction), support vertical ou accolade latérale (linteaux de portes),
-objectif `min λ1·N_pièces + λ2·N_types`. Les patterns (`tools/patterns.py` :
-`cheap` = moins de pièces, `strong` = joints décalés, `decorative` = bandes
-bicolores) sont choisis par le LLM, la variante concrète par le solver.
-Chaque erreur (blueprint invalide, région insatisfiable, brique sans appui)
-est un **feedback déterministe** renvoyé au LLM (2-3 tours).
-
-```bash
-pip install ortools
-export DEEPSEEK_API_KEY=sk-...
-python3 tools/generate_solver.py "un château médiéval avec deux tours et un donjon"
-python3 tools/generate_solver.py "..." --blueprint bp.json --no-llm   # sans clé API
-python3 tools/generate_solver.py "..." --max-pieces 150 --no-video
-```
-
-Outils MCP correspondants : `solve_blueprint(blueprint)` (blueprint JSON →
-rapport + .ldr) et `generate_solved(prompt)` (pipeline complet).
-
-- **Solver design** : les composants peuvent être placés par **attachement
-  relatif** (`"attach": {"to": "tower_1", "side": "+x", "offset": 2}`) — le
-  LLM décrit les relations, les coordonnées sont calculées (ancre inconnue,
-  cycle et hors-terrain rejetés) ; des composants attachés se touchent, donc
-  le modèle est connexe.
-- **Cache de modules** (passage à l'échelle) : les régions de même forme
-  (empreinte relative, hauteur, creux, pièces, couleurs) ne sont résolues
-  qu'**une seule fois** — les tours jumelles, murailles répétées etc.
-  sont translatées depuis la solution en cache.
 
 ## Usage B : serveur MCP
 
@@ -455,8 +325,9 @@ python3 -m pytest tests -q
 
 Les tests couvrent le compilateur (couverture, collisions, appareillage,
 formes qui s'élargissent), la physique (studs, tiles, accolement latéral),
-les exports (BOM, XML), la notice (SVG sans LeoCAD) et les formes de démo.
-Le test du solver CP-SAT est ignoré si `ortools` n'est pas installé.
+les débords/corbeaux, les cheese slopes, le SNOT, les exports (BOM, XML),
+la notice (SVG sans LeoCAD) et les formes de démo. Les tests du pipeline v1
+sont dans `archive/v1/tests` (voir `archive/README.md`).
 
 ## Références
 
