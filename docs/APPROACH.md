@@ -239,14 +239,16 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 ```bash
 python3 tools/bench.py --shapes
 # modèle                        pièces  couv.  amas stab.  valid
-# brick                              1 100.0%     1  1.00    oui
-# car                              124 100.0%     1  1.00    oui
-# duck                              30 100.0%     1  1.00    oui
-# house                            165 100.0%     1  0.90    oui
-# rocket                           179 100.0%     1  0.90    oui
-# spaceship                        190 100.0%     1  0.90    oui
-# tree                             221 100.0%     1  0.90    oui
-# 7/7 valides · temps médian 0.09 s
+# brick                              5 100.0%     1  1.00    oui
+# car                              247 100.0%     1  0.90    oui
+# castle                          3664 100.0%     1  0.90    oui
+# diorama                         1279 100.0%     1  0.90    oui
+# duck                             111 100.0%     1  0.90    oui
+# house                            949 100.0%     1  0.90    oui
+# rocket                           241 100.0%     1  0.90    oui
+# spaceship                        428 100.0%     1  0.90    oui
+# tree                             351 100.0%     1  0.90    oui
+# 9/9 valides · temps médian 0.11 s
 ```
 
 Les modèles de la v1 (blueprint/solver) et les sets OMR recompilés depuis
