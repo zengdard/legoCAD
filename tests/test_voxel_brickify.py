@@ -340,7 +340,7 @@ def test_profondeur_vers_relief(tmp_path):
 
 def test_formes_demo_constructibles():
     for name in ("house", "rocket", "car", "tree", "brick", "spaceship",
-                 "duck", "castle", "diorama"):
+                 "duck", "castle", "diorama", "gingerbread"):
         model, rep = brickify.brickify(shapes.make(name), name)
         assert rep["coverage"] >= 0.99, (name, rep["coverage"])
         assert rep["islands"] == 1, name

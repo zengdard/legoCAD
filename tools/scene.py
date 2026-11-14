@@ -212,3 +212,92 @@ def village(size: int = 32) -> VoxelGrid:
     for (wx, wz) in ((28, 12), (30, 12), (28, 13), (30, 13)):
         s.g.box(wx, 2, wz, 1, 1, 1, "0")
     return s.build()
+
+
+def gingerbread(g: VoxelGrid, x: int, z: int, y0: int = 3,
+                scale: int = 1) -> None:
+    """Colosse pain d'épice : silhouette lisible, glaçage, boutons.
+
+    Jambes séparées, corps 8×3, cou 4×3, tête 6×3, bras en colonnes au sol.
+    Le bras gauche se prolonge vers l'avant pour « tenir » les créneaux.
+    """
+    # jambes : deux colonnes 3×3 séparées de 2 studs
+    g.box(x + 2, y0, z, 3, 6, 3, BROWN)
+    g.box(x + 7, y0, z, 3, 6, 3, BROWN)
+    # corps 8×3 et cou
+    g.box(x + 2, y0 + 6, z, 8, 8, 3, BROWN)
+    g.box(x + 4, y0 + 14, z, 4, 1, 3, BROWN)
+    # tête 6×3, sommet arrondi
+    g.box(x + 3, y0 + 15, z, 6, 6, 3, BROWN)
+    g.box(x + 4, y0 + 21, z, 4, 1, 3, BROWN)
+    # bras gauche : colonne au sol, avancée vers le château
+    g.box(x, y0, z + 3, 3, 18, 3, BROWN)
+    g.box(x, y0 + 18, z + 6, 2, 1, 4, WHITE)          # main / doigts
+    # bras droit : colonne au sol le long du corps
+    g.box(x + 10, y0, z, 3, 14, 3, BROWN)
+    g.box(x + 10, y0 + 14, z, 3, 1, 3, WHITE)
+    # glaçage : contour de la face avant seulement (1 stud de profondeur)
+    g.paint_box(x + 2, y0 + 6, z, 1, 8, 1, WHITE)
+    g.paint_box(x + 9, y0 + 6, z, 1, 8, 1, WHITE)
+    # contours du corps seuls ; la tête reste brune pour lire le visage
+
+    # poignets et chevilles
+    g.paint_box(x, y0 + 13, z + 3, 3, 1, 3, WHITE)
+    g.paint_box(x + 10, y0 + 12, z, 3, 1, 3, WHITE)
+    g.paint_box(x + 2, y0 + 4, z, 3, 1, 3, WHITE)
+    g.paint_box(x + 7, y0 + 4, z, 3, 1, 3, WHITE)
+    # visage : yeux (blanc + pupille), nez, sourire, joues
+    for ex in (x + 4, x + 7):
+        g.paint_box(ex, y0 + 18, z, 1, 1, 1, WHITE)
+        g.paint_box(ex, y0 + 19, z, 1, 1, 1, WHITE)   # sourcil
+        g.paint_box(ex, y0 + 17, z, 1, 1, 1, WHITE)
+    g.paint_box(x + 5, y0 + 17, z, 2, 1, 1, RED)      # nez gumdrop
+    g.paint_box(x + 4, y0 + 16, z, 2, 1, 1, WHITE)    # sourire
+    g.paint_box(x + 6, y0 + 16, z, 2, 1, 1, WHITE)
+    g.paint_box(x + 3, y0 + 18, z, 1, 1, 1, RED)      # joues
+    g.paint_box(x + 8, y0 + 18, z, 1, 1, 1, RED)
+    # boutons gumdrop (face avant)
+    for i, c in enumerate((RED, GREEN, YELLOW)):
+        g.paint_box(x + 5, y0 + 8 + i * 2, z, 2, 1, 1, c)
+    # petit pain d'épice sur l'épaule droite
+    gingerbread_mini(g, x + 9, z + 1, y0 + 17)
+
+
+def gingerbread_mini(g: VoxelGrid, x: int, z: int, y0: int) -> None:
+    """Petit bonhomme pain d'épice 4×2, sur l'épaule du colosse."""
+    g.box(x, y0, z, 4, 2, 2, BROWN)              # jambes
+    g.box(x, y0 + 2, z, 4, 2, 2, BROWN)          # corps + bras
+    g.box(x + 1, y0 + 4, z, 2, 2, 2, BROWN)      # tête
+    g.paint_box(x + 1, y0 + 4, z, 2, 1, 1, WHITE)
+    g.paint_box(x + 1, y0 + 5, z, 1, 1, 1, "0")
+    g.paint_box(x + 2, y0 + 5, z, 1, 1, 1, "0")
+    g.paint_box(x + 1, y0 + 2, z, 2, 1, 1, RED)
+
+
+def milk_vat(g: VoxelGrid, x: int, z: int, y0: int = 3) -> None:
+    """Cuve de lait **renversée** vers la gauche : bac incliné, jet, flaque."""
+    # bac plus haut à l'arrière : la surface du lait est inclinée
+    g.box(x, y0, z + 2, 6, 5, 2, DGRAY)                # fond arrière
+    g.box(x, y0, z, 6, 3, 2, DGRAY)                    # avant plus bas
+    g.paint_box(x, y0 + 1, z, 6, 1, 4, BROWN)
+    g.paint_box(x, y0 + 2, z, 4, 1, 2, WHITE)          # lait côté bas
+    g.paint_box(x + 1, y0 + 4, z + 2, 4, 1, 2, WHITE)  # lait côté haut
+    g.box(x - 1, y0, z, 1, 3, 4, WHITE)                # jet qui coule
+    g.paint_box(x - 6, y0 - 1, z - 1, 6, 1, 5, WHITE)  # flaque
+    # mains des gardes sur le bord arrière
+    g.paint_box(x + 1, y0 + 4, z + 3, 1, 1, 1, YELLOW)
+    g.paint_box(x + 4, y0 + 4, z + 3, 1, 1, 1, YELLOW)
+
+
+def gingerbread_castle(size: int = 48) -> VoxelGrid:
+    """Scène : colosse pain d'épice contre le château, gardes et cuve."""
+    import shapes as shapes_mod
+    s = Scene(size)
+    castle = shapes_mod.castle(size=32)
+    s.merge(castle, 8, 14)
+    # le géant est devant la porte ; son bras gauche rejoint les créneaux
+    gingerbread(s.g, 20, 9)
+    milk_vat(s.g, 36, 6)
+    s.figure(36, 10, BLUE, "0")
+    s.figure(40, 10, RED, BROWN)
+    return s.build(mirror=False)

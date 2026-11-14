@@ -55,6 +55,8 @@ EXAMPLES = [
      "desc": "Enceinte, tours, donjon, porte, douve", "width": 26},
     {"id": "diorama", "label": "Village (diorama)",
      "desc": "Deux maisons, place, étang, arbres, personnages", "width": 32},
+    {"id": "gingerbread", "label": "Pain d'épice contre le château",
+     "desc": "Colosse, gardes, cuve de lait, donjon", "width": 48},
     {"id": "brick", "label": "Brique géante", "desc": "Le test minimal",
      "width": 4},
 ]

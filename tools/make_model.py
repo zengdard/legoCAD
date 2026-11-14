@@ -150,7 +150,8 @@ def run(args) -> dict:
             # la caméra par défaut doit montrer la façade principale
             cam = {"castle": (22, 168), "house": (20, 200),
                    "car": (18, 210), "spaceship": (26, 210),
-                   "diorama": (26, 20)}.get(
+                   "diorama": (26, 20),
+                   "gingerbread": (24, 135)}.get(
                        getattr(args, "shape", None), (30, 42))
             rend.render_image(ldr, png, width=1100, height=820,
                               lat=cam[0], lon=cam[1])

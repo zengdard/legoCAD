@@ -588,6 +588,12 @@ def diorama(size: int = 32) -> VoxelGrid:
     return scene_mod.village(size)
 
 
+def gingerbread() -> VoxelGrid:
+    """Scène « gingerbread man contre le château » (48×48)."""
+    import scene as scene_mod
+    return scene_mod.gingerbread_castle(48)
+
+
 def brick(width: int = 4, depth: int = 2) -> VoxelGrid:
     """Une brique géante (démo minimale)."""
     return VoxelGrid().box(0, 0, 0, width, 3, depth, RED)
@@ -630,6 +636,7 @@ SHAPES = {
     "brick": brick,
     "castle": castle,
     "diorama": diorama,
+    "gingerbread": gingerbread,
     "spaceship": spaceship,
     "mosaic": mosaic,
 }

@@ -40,6 +40,7 @@ pip install -r requirements.txt
 # formes prêtes à l'emploi (sans LLM, sans réseau)
 python3 tools/make_model.py --shape house --name maison
 python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape gingerbread --name pain_epice --views
 python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
 python3 tools/make_model.py --shape diorama --name duo --max-components 2
 python3 - <<'PY'
@@ -60,6 +61,7 @@ python3 tools/depth_to_voxel.py --depth depth.png --color photo.jpg \
 python3 tools/make_model.py --vox models/relief.vox.json --name relief
 python3 tools/make_model.py --shape house --name maison
 python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape gingerbread --name pain_epice --views
 python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
 python3 tools/make_model.py --shape diorama --name duo --max-components 2
 python3 - <<'PY'
@@ -167,7 +169,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/make_model.py` | CLI : forme/volume/.ldr/image → tous les livrables |
 | `tools/text_to_voxel.py` | texte → programme de volume (LLM) → volume, avec bac à sable |
 | `tools/voxel_runner.py` | exécution bornée du script de volume |
-| `tools/shapes.py` | formes procédurales : maison, village (diorama), château fort, fusée, vaisseau Classic Space, canard (mosaïque), voiture, sapin, brique, mosaïque |
+| `tools/shapes.py` | formes procédurales : maison, village (diorama), château fort, **pain d'épice contre le château**, fusée, vaisseau Classic Space, canard (mosaïque), voiture, sapin, brique, mosaïque |
 | `tools/scene.py` | composeur de scènes : sol, cottage, personnage, arbre, étang, étal, mur de fond (`Scene`) |
 | `tools/quality.py` | score multi-critères et contrôles |
 | `tools/availability.py` | calibration de la disponibilité sur le corpus OMR |
@@ -348,6 +350,7 @@ est déjà repris :
 python3 tools/views.py --ldr out/web/chateau/chateau.ldr --out out/web/chateau/views
 python3 tools/make_model.py --shape house --name maison
 python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape gingerbread --name pain_epice --views
 python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
 python3 tools/make_model.py --shape diorama --name duo --max-components 2
 python3 - <<'PY'

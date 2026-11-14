@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2026-11-14 — pain d'épice contre le château (v2.9)
+
+- `scene.gingerbread_castle` : scène 48×48 avec château 32×32, colosse
+  pain d'épice (glaçage, boutons, visage, bras au sol), deux gardes,
+  cuve de lait renversée, jet/flaque et petit pain d'épice sur l'épaule.
+- `scene.gingerbread`, `gingerbread_mini`, `milk_vat`.
+- Modèle : 4 765 pièces, 100 %, 1 amas, stabilité 0,90, score 0,94 A ;
+  8 vues + notice + BOM + `source.json`.
+- `--shape gingerbread` ; 10/10 formes valides ; tests 65.
+
 ## 2026-11-14 — composeur de scènes (v2.8)
 
 - `tools/scene.py` : API `Scene` (sol, cottage, personnage, arbre, étang,
