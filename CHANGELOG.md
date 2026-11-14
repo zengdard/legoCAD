@@ -8,6 +8,8 @@
 - Personnages 4 studs (épaules, mains, yeux, bouche) au lieu de 2×2.
 - Village 1 453 pièces, 100 %, 1 amas, 8 vues, score 0,93 A.
 - Tests : 64 passés (composeur + visage + scène).
+- `source.json` : provenance du build (forme, options, pipeline) à côté du
+  `.ldr`, comme le `.py` de BrickAgent. Steps, notice et BOM restent liés.
 
 ## 2026-11-14 — scènes et matières (v2.7)
 

@@ -78,8 +78,9 @@ python3 web/server.py --port 8000
 ```
 
 Sorties dans `out/web/<nom>/` : `*.ldr`, `preview.png` (LeoCAD) ou
-`preview.svg` (rendu isométrique sans dépendance), `notice.html` (A4
-imprimable), `*.bom.csv`, `*.bom.json`, `*.wanted_list.xml`, `report.json`.
+`preview.svg`, `notice.html` (A4 imprimable), `*.bom.csv`, `*.bom.json`,
+`*.wanted_list.xml`, `source.json` (provenance), `report.json` ; avec
+`--views`, `views/` (8 PNG + `contact.png` + `views.json`).
 
 **Pourquoi c'est constructible** — trois règles du compilateur :
 

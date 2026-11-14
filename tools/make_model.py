@@ -42,6 +42,30 @@ import voxel                       # noqa: E402
 from brickify import BrickifyOptions  # noqa: E402
 
 
+def _write_source(args, name: str, out: Path) -> None:
+    """Provenance du build (équivalent du .py de BrickAgent, en JSON)."""
+    data = {
+        "name": name,
+        "shape": getattr(args, "shape", None),
+        "width": getattr(args, "width", None),
+        "image": getattr(args, "image", None),
+        "ldr": getattr(args, "ldr", None),
+        "vox": getattr(args, "vox", None),
+        "options": {
+            "tiles": not getattr(args, "no_tiles", False),
+            "tile_cap": not getattr(args, "no_tile_cap", False),
+            "snot": not getattr(args, "no_snot", False),
+            "studs": (getattr(args, "studs", 0.0) or
+                      (0.20 if getattr(args, "shape", None) == "diorama"
+                       else 0.0)),
+            "max_components": getattr(args, "max_components", 1),
+        },
+        "pipeline": "v2 volume -> briques (tools/brickify.py)",
+    }
+    (out / "source.json").write_text(json.dumps(data, indent=2,
+                                                ensure_ascii=False))
+
+
 def _grid_from_args(args) -> tuple[voxel.VoxelGrid, str]:
     if args.shape:
         kwargs = {}
@@ -105,6 +129,7 @@ def run(args) -> dict:
     out = PROJECT / "out" / "web" / _slug(name)
     out.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ldr, out / ldr.name)
+    _write_source(args, name, out)
 
     bom = bmod.export_all(model, out, name, online=bool(getattr(args, "rebrickable", False)))
     avail = bom["meta"]["availability"]
@@ -209,6 +234,7 @@ def _run_native(args) -> dict:
     out = PROJECT / "out" / "web" / _slug(name)
     out.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ldr, out / ldr.name)
+    _write_source(args, name, out)
     bom = bmod.export_all(model, out, name, online=bool(getattr(args, "rebrickable", False)))
     stab = stability.analyze(model)
     preview = out / "preview.svg"
