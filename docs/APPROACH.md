@@ -143,8 +143,15 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
   supportée, mais leur pose n'est pas encore validée au rendu : désactivées.
 - **Tiles** : une plaque de finition (`tile_cap`) couvre chaque sommet ;
   la surface est lisse, comme sur un set réel.
-- **Pièces 2D** : fondation 4×4/4×8 (`3031`/`3035`) pour relier les rangées
-  et couvrir les débords en coin.
+- **Pièces 2D** : fondation 4×4/4×8 (`3031`/`3035`) et **plaque de base
+  32×32** (`3811`) quand l'empreinte est exactement un format standard : le
+  socle est une pièce, ce qui relie les rangées du soubassement.
+- **Débords / corbeaux** : une cellule sans appui vertical est couverte
+  **avant** le pavage par une pièce posée en travers de l'appui
+  (`_cover_overhangs`), puis un re-pavage local (`_repair_gaps`) retire et
+  repose les pièces du niveau autour des trous restants. C'est ce qui rend
+  constructibles les mâchicoulis, parapets de tours rondes, toits coniques
+  et ailes en porte-à-faux.
 - **Sous-assemblages** : les liaisons à 1 seul stud sont coupées du graphe ;
   les modules restants ont une page dédiée dans la notice
   (`tools/instructions.py`).

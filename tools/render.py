@@ -40,10 +40,30 @@ def _run(args: list[str]) -> None:
         raise RuntimeError(f"LeoCAD a échoué :\n{err or res.stdout}")
 
 
+def _flatten(ldr: Path, out_png: Path) -> Path:
+    """Copie du modèle sans marqueurs `0 STEP`.
+
+    La CLI de LeoCAD n'affiche que le premier pas d'un fichier à étapes
+    (chaque `0 STEP` démarre une vue). Pour l'aperçu du modèle **complet**, on
+    rend donc une copie aplatie, placée à côté de l'image et non dans
+    `models/`.
+    """
+    text = ldr.read_text()
+    if "0 step" not in text.lower():
+        return ldr
+    out_png.parent.mkdir(parents=True, exist_ok=True)
+    flat = out_png.parent / (ldr.stem + ".flat.ldr")
+    lines = [ln for ln in text.splitlines()
+             if ln.strip().upper() != "0 STEP"]
+    flat.write_text("\n".join(lines) + "\n")
+    return flat
+
+
 def render_image(ldr: Path, out_png: Path, width=1280, height=960,
                  lat=30, lon=45, last_step=None, auto_frame=True) -> Path:
-    args = [str(ldr), "-i", str(out_png), "-w", str(width), "-h", str(height)]
-    args += auto_camera(Path(ldr), lat, lon) if auto_frame else \
+    src = _flatten(ldr, out_png)
+    args = [str(src), "-i", str(out_png), "-w", str(width), "-h", str(height)]
+    args += auto_camera(Path(src), lat, lon) if auto_frame else \
             ["--camera-angles", str(lat), str(lon), "--shading", "default"]
     if last_step:
         args += ["-f", "1", "-t", str(int(last_step))]

@@ -14,8 +14,8 @@ Deux pipelines coexistent :
 
 La validité suit le contrat de **BrickBench** (brickben.ch, 2026) : pièces
 réelles, zéro collision, zéro pièce flottante, **un seul composant**, stable.
-Le benchmark local (`tools/bench.py`) donne **7/7 formes valides** à 100 %
-de couverture en moins de 0,15 s par modèle.
+Le benchmark local (`tools/bench.py`) donne **8/8 formes valides** à 100 %
+de couverture en moins de 0,5 s par modèle (3 s pour le château).
 
 ```
  forme / texte / image / .ldr
@@ -74,13 +74,30 @@ imprimable), `*.bom.csv`, `*.bom.json`, `*.wanted_list.xml`, `report.json`.
 3. une pièce n'est acceptée que si **au moins un de ses studs** repose sur
    une pièce déjà posée ; l'accolement latéral ne compte pas.
 
-**v2.3** ajoute les pentes 45/33 et les tiles (toits/carrosseries), les
-plaques 2D 4×4/4×8 (débords et liaisons), la réparation des débords,
-**Depth Anything V2 ONNX** (image → depth → relief constructible, avec
-masque), un **prototype SNOT 3D** (frames de connecteurs, headlight brick,
-export LDraw), les sous-ensembles/chapitres dans la notice, les familles de
-connecteurs (stud/SNOT/Technic/hinge) et les intégrations
-Rebrickable/LPub3D. LPub3D a été installé et testé (PDF de 24 pages).
+**v2.4 — sets détaillés.** Le compilateur sait maintenant poser de vraies
+pièces de détail sur les débords :
+
+- **plaque de base 32×32/48×48** (3811/4186) quand l'empreinte le permet :
+  le socle est une seule pièce, comme dans un set, et les rangées du
+  soubassement sont reliées ;
+- **passes de corbeaux** (`_cover_overhangs`) : une cellule en porte-à-faux
+  qui n'a aucun appui vertical est d'abord couverte par une pièce posée
+  **en travers** de l'appui (1×2, 1×4, 1×6, 2×N), exactement comme un
+  corbeau de mâchicoulis ;
+- **re-pavage local** (`_repair_gaps`) quand aucune pièce ne peut enjamber :
+  les pièces du niveau autour du trou sont retirées puis re-pavées, avec
+  restauration si le pavage échoue ;
+- **formes enrichies** : château (enceinte, contreforts, mâchicoulis, tours
+  rondes à toit conique, châtelet, donjon à lanterne, cour vivante) et
+  maison (colombages, fenêtres à volets, porche, cheminée, haie fleurie,
+  jardin arboré) ; voiture et vaisseau ont reçu phares, galerie, bandes et
+  trains d'atterrissage ;
+- **rendu LeoCAD corrigé** : la CLI n'affiche que le premier pas d'un
+  fichier à étapes ; l'aperçu rend une copie aplatie du modèle complet.
+
+v2.3 avait apporté les pentes 45/33, les tiles, **Depth Anything V2 ONNX**
+(image → depth → relief), le prototype **SNOT 3D**, les sous-ensembles dans
+la notice et les intégrations Rebrickable/LPub3D.
 
 Le détail de l'approche, l'état de l'art (BrickGPT, BrickWright, BrickNet,
 BrickBench, StableLego) et la feuille de route sont dans

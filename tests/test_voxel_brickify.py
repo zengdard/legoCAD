@@ -159,6 +159,43 @@ def test_fondation_4x4_2d():
     assert rep["islands"] == 1
 
 
+def test_plaque_de_base_32x32():
+    model, rep = _box(32, 3, 32)
+    assert any(b["part_id"] == "3811" for b in model.bricks)
+    assert rep["coverage"] == 1.0
+    assert rep["islands"] == 1
+
+
+def test_pas_de_plaque_de_base_sur_empreinte_non_standard():
+    model, rep = _box(33, 3, 31)
+    assert not any(b["part_id"] in ("3811", "4186") for b in model.bricks)
+    assert rep["coverage"] == 1.0
+    assert rep["islands"] == 1
+
+
+def test_debord_de_tour_couvert_par_un_corbeau():
+    """Le parapet d'une tour ronde est plus large que le fût : ses cellules
+    extérieures n'ont aucun appui vertical et doivent être couvertes par des
+    pièces posées en travers (corbeaux), pas laissées vides."""
+    g = voxel.VoxelGrid()
+    shapes._castle_round_tower(g, 8, 8, 3.3, 0, 14, "71", "272", "72")
+    model, rep = brickify.brickify(g, "tour")
+    assert rep["coverage"] == 1.0
+    assert rep["gap_count"] == 0
+    assert rep["islands"] == 1
+
+
+def test_render_aplatit_les_etapes(tmp_path):
+    import render
+    model, _ = _box(6, 3, 6)
+    ldr = tmp_path / "m.ldr"
+    model.save(ldr)
+    assert "0 STEP" in ldr.read_text().upper()
+    flat = render._flatten(ldr, tmp_path / "preview.png")
+    assert "0 STEP" not in flat.read_text().upper()
+    assert flat.exists()
+
+
 def test_familles_de_connecteurs():
     model, _ = _box(8, 6, 8)
     fam = studs.families(model)
