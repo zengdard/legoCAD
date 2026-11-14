@@ -163,6 +163,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/rebrickable.py` | vérification de disponibilité en ligne (API Rebrickable v3) |
 | `tools/pdf_notice.py` | notice PDF via LPub3D (repli HTML) |
 | `tools/bench.py` | benchmark validité / couverture / stabilité (inspiré de BrickBench) |
+| `tools/views.py` | banc visuel 8 vues + planche contact + métriques de silhouette (protocole BrickBench) |
 | `web/server.py`, `web/index.html` | générateur en ligne (stdlib, Docker) |
 | `data/part_colors.json` | couples pièce/couleur observés dans 493 sets officiels |
 | `data/bricklink_colors.json` | correspondance LDraw → BrickLink |
@@ -304,6 +305,35 @@ python3 web/server.py --port 8000   # puis /gallery
 Le vaisseau `spaceship` de `tools/shapes.py` reprend cette grammaire
 (gris/bleu, verrière trans-jaune `46`, réacteurs, ailerons, logo) dans un
 volume constructible.
+
+## Reprises de BrickBench (galerie « Set », 2026)
+
+L'étude de la galerie <https://gallery.brickben.ch/?s=set> et du papier
+[arXiv:2610.12452](https://arxiv.org/abs/2610.12452) est dans
+[`docs/BRICKBENCH_SET_GALLERY.md`](docs/BRICKBENCH_SET_GALLERY.md). Ce qui
+est déjà repris :
+
+| Action | État | Où |
+|---|---|---|
+| **A8** banc 8 vues + planche + silhouette | **fait** | `tools/views.py`, `--views` |
+| **A9** garde-fous anti-patterns | **fait** | `quality.design_flags` (`report.json`) |
+| **A17** variété de pièces | **fait** | `quality.variety` (types, entropie, dominance) |
+| **A10** notice + provenance | **déjà là** | steps, notice, BOM, wanted list |
+| A1 scène multi-composants | à faire | `studs`/`quality` |
+| A2 composeur de diorama | à faire | `scene.py` |
+| A3 palette de détail | à faire | `pieces_catalog.json` |
+| A4 personnages | à faire | `figures.py` |
+| A5 props et végétation | à faire | `props.py` |
+| A6 matières/textures | à faire | `brickify` |
+
+```bash
+python3 tools/views.py --ldr out/web/chateau/chateau.ldr --out out/web/chateau/views
+python3 tools/make_model.py --shape house --name maison --views
+# -> views/contact.png, views/views.json, 8 PNG
+```
+
+Les métriques sont volontairement **descriptives** (`occupancy`, `symmetry`,
+`contour`, `back_non_empty`) : un audit de design, pas un juge automatique.
 
 ## Score et validation
 

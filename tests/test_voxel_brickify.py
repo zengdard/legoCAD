@@ -372,6 +372,34 @@ def test_bom_exporte_et_disponibilite(tmp_path):
     assert Path(files["xml"]).exists()
 
 
+def test_flags_anti_patterns_1x1():
+    from ldraw_model import LDrawModel
+    m = LDrawModel("tapis")
+    for x in range(10):
+        for z in range(5):
+            m.place("3024", x, z, 0, "4")
+    flags = quality.design_flags(m, {"pieces": 50, "islands": 1})
+    codes = {f["code"] for f in flags}
+    assert "type_dominant" in codes
+    assert "trop_de_1x1" in codes
+
+
+def test_pas_de_faux_positif_sur_une_forme_saine():
+    model, rep = _box(10, 6, 8)
+    flags = quality.design_flags(model, rep)
+    assert not any(f["severity"] == "error" for f in flags)
+    assert not any(f["code"] in ("trop_de_1x1", "trop_de_tuiles")
+                   for f in flags)
+
+
+def test_variete_de_pieces():
+    model, rep = _box(10, 6, 8)
+    var = quality.variety(model, rep)
+    assert var["types"] >= 2
+    assert 0.0 <= var["entropy"] <= 1.0
+    assert 0.0 <= var["dominant_share"] <= 1.0
+
+
 def test_score_qualite():
     model, rep = _box(10, 6, 8)
     bom_meta = {"mix_similarity": 0.5, "availability": {"checked": False}}

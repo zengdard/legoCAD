@@ -129,6 +129,14 @@ def run(args) -> dict:
         except Exception as exc:                     # LeoCAD absent/erreur
             print(f"[rendu] LeoCAD ignoré : {exc}", flush=True)
 
+    if getattr(args, "views", False):
+        try:
+            import views as views_mod
+            res = views_mod.render_views(ldr, out / "views")
+            print(f"[vues] {res['contact']}", flush=True)
+        except Exception as exc:
+            print(f"[vues] ignoré : {exc}", flush=True)
+
     notice_path = None
     if not args.no_notice:
         notice_path = notice.build(
@@ -204,6 +212,14 @@ def _run_native(args) -> dict:
         preview_svg.save_svg(model, preview, title=name)
     except Exception:
         preview = None
+    if getattr(args, "views", False):
+        try:
+            import views as views_mod
+            res = views_mod.render_views(ldr, out / "views")
+            print(f"[vues] {res['contact']}", flush=True)
+        except Exception as exc:
+            print(f"[vues] ignoré : {exc}", flush=True)
+
     notice_path = None
     pdf_path = None
     if getattr(args, "pdf", False):
@@ -279,6 +295,8 @@ def main():
                     help="désactive les bannières SNOT (4070 + plaque)")
     ap.add_argument("--stack", action="store_true")
     ap.add_argument("--no-render", action="store_true")
+    ap.add_argument("--views", action="store_true",
+                    help="banc visuel 8 vues + planche contact (BrickBench)")
     ap.add_argument("--no-notice", action="store_true")
     ap.add_argument("--no-notice-render", action="store_true")
     ap.add_argument("--video", action="store_true")

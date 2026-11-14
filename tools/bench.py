@@ -34,6 +34,8 @@ import voxel                        # noqa: E402
 def _row(name: str, model, report: dict, seconds: float,
          extra: dict | None = None) -> dict:
     val = quality.validity(model, report)
+    flags = quality.design_flags(model, report)
+    var = quality.variety(model, report)
     return {
         "name": name,
         "pieces": report.get("pieces", 0),
@@ -44,6 +46,8 @@ def _row(name: str, model, report: dict, seconds: float,
         "slopes": report.get("slopes", 0),
         "valid": val["valid"],
         "reasons": val["reasons"],
+        "flags": [f["code"] for f in flags],
+        "variety": var,
         "seconds": round(seconds, 2),
         **(extra or {}),
     }
@@ -104,6 +108,8 @@ def _print(rows: list[dict]) -> None:
               f"{r.get('seconds',0):6.2f}")
         if not r.get("valid") and r.get("reasons"):
             print(f"  ↳ {', '.join(str(x) for x in r['reasons'])[:100]}")
+        if r.get("flags"):
+            print(f"  ⚑ {', '.join(r['flags'])[:100]}")
     if rows:
         valid = sum(1 for r in rows if r.get("valid"))
         print(f"\n{valid}/{len(rows)} valides · "

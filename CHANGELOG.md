@@ -1,5 +1,16 @@
 # Journal des versions
 
+## 2026-11-14 — reprise de BrickBench (v2.6)
+
+- Étude de la galerie `?s=set` et du papier arXiv:2610.12452 dans
+  `docs/BRICKBENCH_SET_GALLERY.md` (100 prompts, 17 `.mpd` analysés).
+- **Banc 8 vues** (`tools/views.py`, `--views`) : planche contact, vue
+  frontale, occupation, symétrie, contour, contrôle « dos non vide ».
+- **Garde-fous** (`quality.design_flags`) : type dominant > 60 %, 1×1
+  > 40 %, tuiles > 50 %, composants > 10, plancher 400, socle vide.
+- **Variété** (`quality.variety`) : types, entropie, part du type dominant.
+- `quality.validity` accepte `max_components` (préparation des scènes).
+
 ## 2026-11-14 — remaniement
 
 - Pipeline v1 (solver CP-SAT, blueprint IR, templates, clients LLM) déplacé

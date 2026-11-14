@@ -26,8 +26,83 @@ WEIGHTS = {
 }
 
 
+def design_flags(model, report: dict | None = None) -> list[dict]:
+    """Anti-patterns observés dans les échecs de BrickBench (GLM, Muse, …).
+
+    Ce ne sont pas des erreurs de validité : un modèle peut être « valide »
+    et être un tapis de plaques 1×1. Chaque drapeau est une **alerte de
+    design**, affichée sans bloquer la génération.
+    """
+    from collections import Counter
+    report = report or {}
+    bricks = list(getattr(model, "bricks", []))
+    total = len(bricks) or 1
+    counts = Counter(str(b["part_id"]) for b in bricks)
+    top_id, top_n = counts.most_common(1)[0] if counts else ("", 0)
+    top_share = top_n / total
+    tiny = ("3024", "3070b", "6141", "98138", "4073", "54200")
+    tiny_n = sum(counts[p] for p in tiny)
+    tiles = sum(1 for b in bricks
+                if str(model.part(b["part_id"]).get("kind")) == "tile")
+    pieces = int(report.get("pieces", total) or total)
+    islands = int(report.get("islands", 0) or 0)
+    flags = []
+
+    def add(code, detail, severity="warning"):
+        flags.append({"code": code, "severity": severity,
+                      "detail": detail})
+
+    if top_share > 0.60:
+        add("type_dominant",
+            f"{top_id} = {top_share:.0%} des pièces (seuil 60 %)")
+    if tiny_n / total > 0.40:
+        add("trop_de_1x1",
+            f"{tiny_n / total:.0%} de pièces 1×1 (seuil 40 %)")
+    if tiles / total > 0.50:
+        add("trop_de_tuiles",
+            f"{tiles / total:.0%} de tuiles (seuil 50 %)")
+    if islands > 10:
+        add("composants_eclates",
+            f"{islands} composants (seuil 10 ; une scène vise 2–6)",
+            "error")
+    if 395 <= pieces <= 405:
+        add("plancher_de_pieces",
+            f"{pieces} pièces : proche du plancher 400, risque de remplissage")
+    # socle vide : colonnes du socle sans aucune pièce au sol
+    if bricks:
+        xs = [b["x"] for b in bricks]
+        zs = [b["z"] for b in bricks]
+        area = (max(xs) - min(xs) + 1) * (max(zs) - min(zs) + 1)
+        ground = {(b["x"], b["z"]) for b in bricks if b["y"] == 0}
+        if area and 1 - len(ground) / area > 0.50:
+            add("socle_vide",
+                f"{1 - len(ground) / area:.0%} de l'empreinte sans pièce au sol")
+    return flags
+
+
+def variety(model, report: dict | None = None) -> dict:
+    """Variété de vocabulaire : types, entropie, part du type dominant.
+
+    BrickBench montre que les bons Sets utilisent 47–69 types de pièces ;
+    en dessous de 20, le modèle se rabat sur des plaques.
+    """
+    import math
+    from collections import Counter
+    bricks = list(getattr(model, "bricks", []))
+    counts = Counter(str(b["part_id"]) for b in bricks)
+    total = sum(counts.values()) or 1
+    entropy = -sum((n / total) * math.log(n / total + 1e-12)
+                   for n in counts.values())
+    max_entropy = math.log(len(counts)) if len(counts) > 1 else 1.0
+    return {"types": len(counts),
+            "entropy": round(entropy / max_entropy, 3) if max_entropy else 0.0,
+            "dominant_share": round((counts.most_common(1)[0][1] / total)
+                                    if counts else 0.0, 3),
+            "target_types": "25–50 pour une scène de 600–1500 pièces"}
+
+
 def validity(model, report: dict | None = None,
-             collisions: int = 0) -> dict:
+             collisions: int = 0, max_components: int = 1) -> dict:
     """Contrat de validité « BrickBench » : pièces réelles, pas de collision,
     stable, un seul composant connexe, et constructible dans l'ordre.
 
@@ -45,8 +120,8 @@ def validity(model, report: dict | None = None,
         reasons.append("aucune pièce")
     if collisions:
         reasons.append(f"{collisions} collision(s)")
-    if components != 1:
-        reasons.append(f"{components} composant(s) au lieu de 1")
+    if not (1 <= components <= max_components):
+        reasons.append(f"{components} composant(s) (max {max_components})")
     if not stable:
         reasons.append("instable ou pièces non attachées")
     if not build_ok:
@@ -118,8 +193,14 @@ def score(model, report: dict, bom_meta: dict | None = None,
         checks.append({"name": "Connecteurs non-stud",
                        "ok": True,
                        "detail": f"{extra} (non modélisés)"})
+    flags = design_flags(model, report)
+    if flags:
+        checks.append({"name": "Anti-patterns de design",
+                       "ok": False,
+                       "detail": ", ".join(f["code"] for f in flags)})
     return {"overall": round(overall, 3), "values": values,
             "checks": checks, "weights": WEIGHTS, "validity": val,
+            "flags": flags, "variety": variety(model, report),
             "grade": ("A" if overall >= 0.9 else "B" if overall >= 0.8
                       else "C" if overall >= 0.65 else "D")}
 
