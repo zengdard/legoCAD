@@ -176,11 +176,11 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
   `voxel.from_silhouettes`), puis depth map (DepthAnything/MiDaS) et SAM
   pour détourer. Un modèle de vision ne produit jamais de briques : il
   produit un volume.
-- **Scènes / dioramas** : `shapes.diorama` (village, 1 279 pièces), rapport
+- **Scènes / dioramas** : `tools/scene.py` (`Scene`, cottage, personnage,
+  arbre, étang, étal, mur), `shapes.diorama` (village, 1 453 pièces), rapport
   `components[]` (rôles, stabilité par composant, `--max-components`) et
   banc 8 vues (`tools/views.py`) reprennent le réglage « Set » de BrickBench.
-  Prochaine étape : composeur générique (`scene.py`), palette de 110 pièces
-  et personnages minifig.
+  Prochaine étape : palette de 110 pièces, minifigs LDraw et matières.
 - **Boucle visuelle** : rendre 2-3 vues SVG/LeoCAD, demander à un VLM
   (« est-ce une fusée ? qu'est-ce qui manque ? »), corriger le volume.
   C'est la boucle déjà présente dans `archive/v1/tools/generate_script.py`,

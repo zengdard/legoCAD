@@ -1,5 +1,14 @@
 # Journal des versions
 
+## 2026-11-14 — composeur de scènes (v2.8)
+
+- `tools/scene.py` : API `Scene` (sol, cottage, personnage, arbre, étang,
+  étal, tonneau, lampe, mur de fond) + `village()`.
+- `shapes.diorama` n'est plus codé en dur : il compose via `Scene`.
+- Personnages 4 studs (épaules, mains, yeux, bouche) au lieu de 2×2.
+- Village 1 453 pièces, 100 %, 1 amas, 8 vues, score 0,93 A.
+- Tests : 64 passés (composeur + visage + scène).
+
 ## 2026-11-14 — scènes et matières (v2.7)
 
 - **Composants** : `report.components` (taille, rôle socle/module/prop,
