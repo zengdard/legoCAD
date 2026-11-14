@@ -178,6 +178,33 @@ def test_cheese_slope_sur_marche_de_deux_plaques():
     assert lines
 
 
+def test_scene_deux_composants_stables():
+    """Une scène BrickBench peut avoir 2 composants, chacun stable."""
+    g = voxel.VoxelGrid()
+    g.box(0, 0, 0, 6, 6, 6, "4")
+    g.box(12, 0, 0, 3, 4, 3, "2")
+    model, rep = brickify.brickify(
+        g, "scene", brickify.BrickifyOptions(max_components=2))
+    assert rep["islands"] == 2
+    assert len(rep["components"]) == 2
+    assert all(c["min_stability"] >= 0.8 for c in rep["components"])
+    assert all(c["grounded"] for c in rep["components"])
+    assert quality.validity(model, rep, max_components=2)["valid"]
+    assert not quality.validity(model, rep)["valid"]
+
+
+def test_studs_exposes_par_remplacement_de_tuiles():
+    g = voxel.VoxelGrid().box(0, 0, 0, 12, 9, 10, "71")
+    model, rep = brickify.brickify(
+        g, "studs", brickify.BrickifyOptions(stud_rate=1.0))
+    assert rep["stud_pieces"] > 0
+    assert rep["coverage"] == 1.0
+    assert rep["islands"] == 1
+    assert rep["min_stability"] >= 0.9
+    assert not any(model.part(b["part_id"]).get("kind") == "tile"
+                   for b in model.bricks)
+
+
 def test_plaque_de_base_32x32():
     model, rep = _box(32, 3, 32)
     assert any(b["part_id"] == "3811" for b in model.bricks)

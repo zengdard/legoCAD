@@ -182,6 +182,14 @@ class LDrawModel:
                     self._occupied[(cx, cy, cz)] = len(self.bricks) - 1
         return brick
 
+    def subset(self, indices) -> "LDrawModel":
+        """Sous-modèle composé de pièces choisies (analyse par composant)."""
+        sub = LDrawModel(f"{self.name}_part")
+        for i in indices:
+            sub.bricks.append(dict(self.bricks[i]))
+        sub._rebuild_occupied()
+        return sub
+
     def add_extra(self, part_id: str, pos_ldu, matrix, color: str = "4") -> dict:
         """Ajoute une pièce SNOT hors grille (position + matrice LDraw)."""
         self.part(part_id)          # valide que la pièce existe

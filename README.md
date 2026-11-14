@@ -40,6 +40,8 @@ pip install -r requirements.txt
 # formes prêtes à l'emploi (sans LLM, sans réseau)
 python3 tools/make_model.py --shape house --name maison
 python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
+python3 tools/make_model.py --shape diorama --name duo --max-components 2
 python3 tools/make_model.py --shape rocket --name fusee --video
 
 # importer un modèle existant ou une image
@@ -52,7 +54,9 @@ python3 tools/depth_to_voxel.py --depth depth.png --color photo.jpg \
   --width 32 --out models/relief.vox.json
 python3 tools/make_model.py --vox models/relief.vox.json --name relief
 python3 tools/make_model.py --shape house --name maison
-python3 tools/make_model.py --shape diorama --name village --views --pdf --rebrickable
+python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
+python3 tools/make_model.py --shape diorama --name duo --max-components 2 --pdf --rebrickable
 
 # texte -> volume -> briques (nécessite une clé LLM)
 export DEEPSEEK_API_KEY=sk-...
@@ -331,12 +335,19 @@ est déjà repris :
 ```bash
 python3 tools/views.py --ldr out/web/chateau/chateau.ldr --out out/web/chateau/views
 python3 tools/make_model.py --shape house --name maison
-python3 tools/make_model.py --shape diorama --name village --views --views
+python3 tools/make_model.py --shape diorama --name village --views
+python3 tools/make_model.py --shape diorama --name village2 --studs 0.35
+python3 tools/make_model.py --shape diorama --name duo --max-components 2 --views
 # -> views/contact.png, views/views.json, 8 PNG
 ```
 
 Les métriques sont volontairement **descriptives** (`occupancy`, `symmetry`,
 `contour`, `back_non_empty`) : un audit de design, pas un juge automatique.
+
+`report.components` décrit chaque amas (taille, rôle socle/module/prop,
+stabilité propre, ancrage). Un objet reste à 1 composant ; une scène peut en
+accepter 2–6 avec `--max-components`. `--studs` remplace une fraction des
+tuiles de sommet par des plaques pour exposer des tenons (texture).
 
 ## Score et validation
 

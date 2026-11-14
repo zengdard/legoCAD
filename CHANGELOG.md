@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 2026-11-14 — scènes et matières (v2.7)
+
+- **Composants** : `report.components` (taille, rôle socle/module/prop,
+  stabilité propre, ancrage) et `--max-components` (1 = objet, 2–6 = scène).
+  `quality.validity/score` acceptent une scène si chaque composant est stable.
+- **Studs exposés** : `--studs F` remplace une fraction des tuiles de sommet
+  par des plaques (même empreinte, même hauteur) ; le village utilise 0,20
+  par défaut. Couverture et stabilité inchangées.
+- Tests : 61 passés ; village 1 279 pièces, 8 vues, score 0,94 A.
+
 ## 2026-11-14 — reprise de BrickBench (v2.6)
 
 - Étude de la galerie `?s=set` et du papier arXiv:2610.12452 dans

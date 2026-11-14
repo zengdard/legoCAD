@@ -147,7 +147,8 @@ def score(model, report: dict, bom_meta: dict | None = None,
     build_errors = report.get("build_errors") or []
     stable = float(report.get("min_stability", 0.0))
 
-    build_ok = (coverage >= 0.999 and islands <= 1 and not unsupported
+    max_components = int(report.get("max_components", 1) or 1)
+    build_ok = (coverage >= 0.999 and islands <= max_components and not unsupported
                 and not build_errors and report.get("pieces", 0) > 0)
     buildability = 1.0 if build_ok else 0.0
     if not build_ok and report.get("pieces", 0) > 0:
@@ -175,14 +176,15 @@ def score(model, report: dict, bom_meta: dict | None = None,
     }
     overall = sum(values[k] * WEIGHTS[k] for k in WEIGHTS)
 
-    val = validity(model, report, collisions=int(report.get("collisions", 0)))
+    val = validity(model, report, collisions=int(report.get("collisions", 0)),
+                   max_components=max_components)
     checks = [
         {"name": "Valide (BrickBench)", "ok": val["valid"],
          "detail": "pièces, collisions, stabilité, un bloc"},
         {"name": "Volume couvert", "ok": coverage >= 0.999,
          "detail": f"{coverage:.1%} des voxels"},
-        {"name": "Un seul bloc", "ok": islands <= 1,
-         "detail": f"{islands} amas"},
+        {"name": "Composants", "ok": 1 <= islands <= max_components,
+         "detail": f"{islands} amas (max {max_components})"},
         {"name": "Pièces attachées", "ok": not unsupported,
          "detail": f"{len(unsupported)} non attachée(s)"},
         {"name": "Ordre de montage", "ok": not build_errors,

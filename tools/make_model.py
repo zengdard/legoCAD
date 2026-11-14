@@ -84,6 +84,10 @@ def run(args) -> dict:
                            bond="stack" if args.stack else "running",
                            add_steps=True,
                            max_parts_per_step=args.parts_per_step,
+                           max_components=getattr(args, "max_components", 1),
+                           stud_rate=(args.studs if getattr(args, "studs", 0)
+                                       else 0.20 if args.shape == "diorama"
+                                       else 0.0),
                            snot_banners=(0 if getattr(args, "no_snot", False)
                                          else 6 if args.shape == "castle"
                                          else 0))
@@ -292,6 +296,10 @@ def main():
     ap.add_argument("--parts-per-step", type=int, default=12)
     ap.add_argument("--no-tiles", action="store_true")
     ap.add_argument("--no-tile-cap", action="store_true")
+    ap.add_argument("--max-components", type=int, default=1,
+                    help="1 = objet ; 2–6 = scène (composants stables)")
+    ap.add_argument("--studs", type=float, default=0.0,
+                    help="fraction de tuiles remplacées par des plaques (studs exposés)")
     ap.add_argument("--no-snot", action="store_true",
                     help="désactive les bannières SNOT (4070 + plaque)")
     ap.add_argument("--stack", action="store_true")

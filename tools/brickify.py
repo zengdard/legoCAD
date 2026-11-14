@@ -84,6 +84,8 @@ class BrickifyOptions:
     tile_cap: bool = True        # finition : une plaque de tile sur chaque sommet
     round_parts: bool = True     # 1x1 isolés en pièces rondes (tourelles, merlons)
     snot_banners: int = 0        # bannières SNOT sur les murs (0 = aucune)
+    max_components: int = 1      # 1 = objet ; 2–6 = scène (composants stables)
+    stud_rate: float = 0.0       # 0 = tuiles partout ; 0.2 = studs exposés
     report_levels: bool = False
 
 
@@ -716,6 +718,42 @@ def _roundify(model: LDrawModel) -> int:
     return count
 
 
+_TILE_TO_PLATE = {
+    "3070b": "3024", "3069b": "3023", "63864": "3623", "2431": "3710",
+    "6636": "3666", "3068b": "3022", "26603": "3021", "87079": "3020",
+}
+
+
+def _studify(model: LDrawModel, rate: float) -> int:
+    """Remplace une fraction des tuiles de sommet par des plaques.
+
+    BrickBench montre que les sets alternent surfaces lisses (tiles) et
+    studs exposés, souvent 10–30 % de la surface. On garde l'empreinte, la
+    rotation et la couleur : seule la texture change, donc la stabilité et
+    les collisions sont inchangées.
+    """
+    if rate <= 0:
+        return 0
+    count = 0
+    limit = int(round(max(0.0, min(1.0, rate)) * 100))
+    for i in range(len(model.bricks) - 1, -1, -1):
+        b = model.bricks[i]
+        part = model.part(b["part_id"])
+        if str(part.get("kind")) != "tile":
+            continue
+        plate = _TILE_TO_PLATE.get(str(b["part_id"]))
+        if not plate:
+            continue
+        key = (b["x"] * 31 + b["z"] * 17 + b["y"] * 7) % 100
+        if key >= limit:
+            continue
+        model.remove(i)
+        if model.try_place(plate, b["x"], b["z"], b["y"], b["color"],
+                           b["rot"]):
+            count += 1
+    return count
+
+
 def _is_top(cells, y: int, h: int, grid_cells: set) -> bool:
     return all((c[0], y + h, c[1]) not in grid_cells for c in cells)
 
@@ -854,6 +892,7 @@ def _brickify_once(grid: VoxelGrid, name: str,
         model, slope_stats = slopes.apply(model)
 
     rounded = _roundify(model) if opts.round_parts else 0
+    studded = _studify(model, opts.stud_rate)
     snot_count = 0
     if opts.snot_banners:
         import snot
@@ -902,13 +941,47 @@ def _brickify_once(grid: VoxelGrid, name: str,
         "single_stud": len(stab.get("single_stud", [])),
         "slopes": slope_stats.get("slopes", 0),
         "round_parts": rounded,
+        "stud_pieces": studded,
         "snot_banners": snot_count,
         "repaired_gaps": repaired,
         "connectors": stab.get("families", {}).get("counts", {}),
         "bounds": model.bounds(),
+        "max_components": opts.max_components,
+        "components": _component_report(model),
     }
     return model, report
 
+
+
+def _component_report(model: LDrawModel) -> list[dict]:
+    """Décrit chaque composant : taille, rôle, stabilité propre, ancrage.
+
+    Une scène BrickBench admet 2–6 composants (bâtiment, props, personnages)
+    à condition que chacun soit stable. On analyse donc chaque sous-modèle
+    séparément pour ne pas mélanger la stabilité d'un prop et celle du mur.
+    """
+    import studs
+    comps = studs.components(model)
+    total = max(1, len(model.bricks))
+    out = []
+    for c in comps:
+        idx = sorted(c)
+        sub = model.subset(idx)
+        st = stability.analyze(sub)
+        kinds = {model.part(model.bricks[i]["part_id"]).get("kind")
+                 for i in idx}
+        role = "socle" if "baseplate" in kinds else \
+            ("prop" if len(idx) <= 20 else "module")
+        out.append({
+            "size": len(idx),
+            "share": round(len(idx) / total, 3),
+            "role": role,
+            "min_stability": st.get("min_stability", 0.0),
+            "grounded": any(model.bricks[i]["y"] == 0 for i in idx),
+            "unsupported": len(st.get("unsupported", [])),
+        })
+    out.sort(key=lambda c: -c["size"])
+    return out
 
 
 def brickify(grid: VoxelGrid, name: str = "model",
@@ -928,7 +1001,8 @@ def brickify(grid: VoxelGrid, name: str = "model",
     removed = 0
     model, report = _brickify_once(grid, name, opts)
     for _ in range(2):
-        if not opts.repair_islands or report.get("islands", 0) <= 1:
+        if not opts.repair_islands or \
+                report.get("islands", 0) <= opts.max_components:
             break
         comps = studs.components(model)
         if len(comps) < 2:
