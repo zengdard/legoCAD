@@ -83,9 +83,13 @@ def run(args) -> dict:
                            tile_cap=not getattr(args, "no_tile_cap", False),
                            bond="stack" if args.stack else "running",
                            add_steps=True,
-                           max_parts_per_step=args.parts_per_step)
+                           max_parts_per_step=args.parts_per_step,
+                           snot_banners=(0 if getattr(args, "no_snot", False)
+                                         else 6 if args.shape == "castle"
+                                         else 0))
     model, report = brickify.brickify(grid, name, opts)
-    print(f"[briques] {report['pieces']} pièces, couverture "
+    print(f"[briques] {report.get('pieces_total', report['pieces'])} pièces, "
+          f"couverture "
           f"{report['coverage']:.1%}, {report['islands']} amas, "
           f"stabilité {report['min_stability']:.2f}", flush=True)
 
@@ -271,6 +275,8 @@ def main():
     ap.add_argument("--parts-per-step", type=int, default=12)
     ap.add_argument("--no-tiles", action="store_true")
     ap.add_argument("--no-tile-cap", action="store_true")
+    ap.add_argument("--no-snot", action="store_true",
+                    help="désactive les bannières SNOT (4070 + plaque)")
     ap.add_argument("--stack", action="store_true")
     ap.add_argument("--no-render", action="store_true")
     ap.add_argument("--no-notice", action="store_true")

@@ -13,8 +13,12 @@ Ce module est un prototype volontairement petit :
   - collision AABB, connexité par le graphe de connecteurs ;
   - export `.ldr` avec matrices, donc ouvrable dans Studio/LeoCAD.
 
-Il n'est **pas encore branché** au compilateur volumique : c'est la brique de
-base pour y ajouter le SNOT (BrickNet : stud / hinge / axle / ball / fixed).
+Il est maintenant **branché** au compilateur comme couche de décoration :
+`decorate_wall_banners()` remplace une brique de mur par une 4070 et attache
+une plaque 1x2 verticale par le tenon latéral. Les pièces SNOT sont exportées
+avec leur matrice complète, comptées dans le BOM et vérifiées en collision.
+La grille volumique reste la structure porteuse : le SNOT ne porte pas encore
+de charge (pas de mur entièrement en studs latéraux).
 
     python3 tools/snot.py --out out/snot_demo.ldr
 """
@@ -216,3 +220,183 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --------------------------------------------------------------------------- #
+# Détails SNOT réels, attachés à un modèle compilé
+# --------------------------------------------------------------------------- #
+# Le compilateur volumique pose la masse principale. Cette couche ajoute des
+# pièces **extérieures** réellement tenues par un tenon latéral :
+#
+#   brique 4070 (tenon sur le côté)  ->  plaque 1x2 verticale (bannière)
+#
+# La plaque est attachée par son dessous au tenon latéral ; elle n'a aucun
+# appui vertical, ce qui est exactement le cas que la grille ne sait pas
+# représenter. On valide donc : (1) remplacement d'une brique de mur par une
+# 4070 de même empreinte, (2) collision de la bannière avec la grille,
+# (3) export LDraw avec matrice complète.
+
+# matrice de la plaque 1x2 verticale quand le tenon pointe vers -z
+_BANNER_M = (0, 0, 1, -1, 0, 0, 0, 1, 0)
+_SIDE_ROT = {"+x": 0, "-z": 90, "-x": 180, "+z": 270}
+_SIDE_DIR = {"+x": (1, 0), "-z": (0, -1), "-x": (-1, 0), "+z": (0, 1)}
+_OUT = {"+x": (1, 0), "-z": (0, -1), "-x": (-1, 0), "+z": (0, 1)}
+
+
+def _rot_y(angle: int):
+    c = int(round(math.cos(math.radians(angle))))
+    s = int(round(math.sin(math.radians(angle))))
+    return (c, 0, s, 0, 1, 0, -s, 0, c)
+
+
+def _brick_ldu_center(model, b: dict) -> tuple[float, float, float]:
+    """Centre LDraw d'une pièce posée sur la grille (même formule que l'export)."""
+    from ldraw_model import STUD, LDU_PER_LEVEL, part_levels
+    part = model.part(b["part_id"])
+    sx, sz = model._footprint(part, b["rot"])
+    cx = (b["x"] + sx / 2.0 - 0.5) * STUD
+    cz = (b["z"] + sz / 2.0 - 0.5) * STUD
+    cy = -(b["y"] * LDU_PER_LEVEL) - part_levels(part) * LDU_PER_LEVEL / 2.0
+    return cx, cy, cz
+
+
+_LONG_BRICKS = {"3004": 2, "3622": 3, "3010": 4, "3009": 6, "3008": 8}
+_FILL_BRICKS = {1: "3005", 2: "3004", 3: "3622", 4: "3010",
+                6: "3009", 8: "3008"}
+
+
+def _refill(model, cells, y, color, rot) -> bool:
+    """Re-pave une rangée de briques 1×N après retrait d'une cellule."""
+    todo = list(cells)
+    while todo:
+        n = len(todo)
+        for L in (6, 4, 3, 2, 1):
+            if L <= n and L in _FILL_BRICKS:
+                if model.try_place(_FILL_BRICKS[L], todo[0][0], todo[0][1],
+                                   y, color, rot):
+                    todo = todo[L:]
+                    break
+        else:
+            return False
+    return True
+
+
+def add_banner(model, brick_index: int, side: str, color: str = "4",
+               banner_color: str = "4") -> bool:
+    """Remplace une brique 1×N de mur par 4070 + 1×N et attache une bannière.
+
+    `side` est la direction **sortante** du mur ("+x", "-x", "+z", "-z").
+    Retourne True si la bannière a été posée et validée. Les briques 1×2 à
+    1×8 sont acceptées : on garde la longueur du pan en re-pavant le reste,
+    donc un mur appareillé fournit toujours des ancrages.
+    """
+    from ldraw_model import part_levels
+    b = model.bricks[brick_index]
+    part = model.part(b["part_id"])
+    n = _LONG_BRICKS.get(str(b["part_id"]))
+    if not n or part_levels(part) != 3:
+        return False
+    sx, sz = model._footprint(part, b["rot"])
+    if max(sx, sz) != n or min(sx, sz) != 1:
+        return False
+    cells = [(b["x"] + i, b["z"] + j)
+             for i in range(sx) for j in range(sz)]
+    dx, dz = _OUT[side]
+    anchor = None
+    for (ax, az) in cells:
+        ox, oz = ax + dx, az + dz
+        levels = range(b["y"] - 1, b["y"] + 4)
+        if any((ox, yy, oz) in model._occupied for yy in levels):
+            continue
+        anchor = (ax, az)
+        break
+    if anchor is None:
+        return False
+    ax, az = anchor
+    rest = [c for c in cells if c != anchor]
+    color = str(b["color"])
+    rot = b["rot"]
+    model.remove(brick_index)
+    if not model.try_place("4070", ax, az, b["y"], color,
+                           _SIDE_ROT[side]):
+        model.try_place(b["part_id"], b["x"], b["z"], b["y"], color, rot)
+        return False
+    placed_before = len(model.bricks)
+    # le reste du pan est re-pavé dans le même sens
+    rest.sort(key=lambda c: (c[0], c[1]))
+    if rest and not _refill(model, rest, b["y"], color, rot):
+        del model.bricks[placed_before - 1:]
+        model._rebuild_occupied()
+        model.try_place(b["part_id"], b["x"], b["z"], b["y"], color, rot)
+        return False
+    # bannière : origine de la plaque à 8 LDU devant la face du tenon
+    idx4070 = None
+    for i in range(len(model.bricks) - 1, -1, -1):
+        bb = model.bricks[i]
+        if bb["part_id"] == "4070" and bb["x"] == ax and bb["z"] == az:
+            idx4070 = i
+            break
+    cx, cy, cz = _brick_ldu_center(model, model.bricks[idx4070])
+    fx, fz = _SIDE_DIR[side]
+    ox_ldu = cx + fx * 18.0
+    oz_ldu = cz + fz * 18.0
+    angle = {"-z": 0, "+x": -90, "+z": 180, "-x": 90}[side]
+    mat = mat_mul(_rot_y(angle), _BANNER_M)
+    model.add_extra("3023", (ox_ldu, cy, oz_ldu), mat, banner_color)
+    return True
+
+
+def decorate_wall_banners(model, max_banners: int = 6,
+                          color: str = "4",
+                          banner_color: str = "4") -> int:
+    """Pose des bannières SNOT sur les **murs extérieurs**, espacées.
+
+    Choisit des briques 1x2 de l'enceinte extérieure (pas les murs de cour),
+    orientées vers l'extérieur, remplace une cellule par une 4070 et attache
+    la plaque. Les briques sont relues après chaque pose : `remove()` décale
+    les indices, donc on ne garde pas d'indices obsolètes.
+    """
+    from ldraw_model import part_levels
+    if not model.bricks:
+        return 0
+    xs = [b["x"] for b in model.bricks]
+    zs = [b["z"] for b in model.bricks]
+    xmin, xmax = min(xs), max(xs)
+    zmin, zmax = min(zs), max(zs)
+    placed: list[tuple[int, int]] = []
+    tried: set[tuple[int, int, int]] = set()
+    count = 0
+    while count < max_banners:
+        candidates = []
+        for i, b in enumerate(model.bricks):
+            if str(b["part_id"]) not in _LONG_BRICKS:
+                continue
+            if part_levels(model.part(b["part_id"])) != 3 or b["y"] < 6:
+                continue
+            key = (b["x"], b["z"], b["y"])
+            if key in tried:
+                continue
+            sx, sz = model._footprint(model.part(b["part_id"]), b["rot"])
+            if any(abs(b["x"] - px) < 3 and abs(b["z"] - pz) < 3
+                   for (px, pz) in placed):
+                continue
+            # côté extérieur = côté du mur de périmètre
+            if sx >= sz:
+                side = "-z" if b["z"] <= zmin + 3 else (
+                    "+z" if b["z"] >= zmax - 3 else None)
+            else:
+                side = "-x" if b["x"] <= xmin + 3 else (
+                    "+x" if b["x"] >= xmax - 3 else None)
+            if side is None:
+                continue
+            candidates.append((i, side))
+        if not candidates:
+            break
+        i, side = candidates[0]
+        b = model.bricks[i]
+        key = (b["x"], b["z"], b["y"])
+        if add_banner(model, i, side, color, banner_color):
+            placed.append((b["x"], b["z"]))
+            count += 1
+        tried.add(key)
+    return count

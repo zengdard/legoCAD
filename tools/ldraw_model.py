@@ -39,6 +39,11 @@ _sys_path_added = False
 _PART_LEVELS = {"54200": 2, "85984": 2, "15068": 2,
                 "6141": 1, "98138": 1, "4073": 1}
 
+# Pièces modélisées avec l'origine en **bas** (y local de -h à 0) et non en
+# haut comme les briques : les cheese slopes. Sans correction, elles flottent
+# d'une plaque au-dessus du support.
+_BOTTOM_ORIGIN = {"54200", "85984", "15068"}
+
 
 def part_levels(part: dict) -> int:
     """Hauteur de construction d'une pièce, en plaques (1 brique = 3)."""
@@ -103,6 +108,9 @@ class LDrawModel:
         self._occupied: dict[tuple, int] = {}  # (x_cell, y_level, z_cell) -> index brique
         self._resolved: dict[str, dict] = {}   # cache de fiches de pièces
         self.warnings: list[str] = []
+        # pièces hors grille (SNOT) : lignes LDraw complètes, exclues du
+        # graphe de stabilité vertical mais incluses dans l'export et le BOM.
+        self.extras: list[dict] = []
         self.autofit = False  # si True, une collision décale la pièce au lieu d'échouer
 
     def part(self, part_id: str) -> dict:
@@ -173,6 +181,15 @@ class LDrawModel:
                 for cy in range(y, y + level_h):
                     self._occupied[(cx, cy, cz)] = len(self.bricks) - 1
         return brick
+
+    def add_extra(self, part_id: str, pos_ldu, matrix, color: str = "4") -> dict:
+        """Ajoute une pièce SNOT hors grille (position + matrice LDraw)."""
+        self.part(part_id)          # valide que la pièce existe
+        extra = {"part_id": str(part_id), "color": str(color),
+                 "pos": tuple(float(v) for v in pos_ldu),
+                 "matrix": tuple(float(v) for v in matrix)}
+        self.extras.append(extra)
+        return extra
 
     def remove(self, index: int) -> dict:
         """Retire une pièce (utilisé par les passes de détail : pentes)."""
@@ -396,18 +413,28 @@ class LDrawModel:
             if (i + 1) in step_starts or i == len(self.bricks) - 1:
                 lines.append("0 STEP")
                 lines.append("")
+        for e in self.extras:
+            x, y, z = e["pos"]
+            m = " ".join(f"{v:g}" for v in e["matrix"])
+            lines.append(f"1 {e['color']} {x:g} {y:g} {z:g} {m} "
+                         f"{e['part_id']}.dat")
         return "\n".join(lines) + "\n"
 
     def _brick_lines(self, b: dict) -> list[str]:
         part = self.part(b["part_id"])
         sx = part["studs_x"]
         sz = part["studs_z"]
-        dx, dz = (sx, sz) if b["rot"] == 0 else (sz, sx)
+        # 180° ne change pas l'empreinte ; 90/270 l'échangent
+        dx, dz = (sx, sz) if b["rot"] in (0, 180) else (sz, sx)
         dx = max(dx, 1.0)
         dz = max(dz, 1.0)
         cx = (b["x"] + dx / 2.0 - 0.5) * STUD
         cz = (b["z"] + dz / 2.0 - 0.5) * STUD
-        cy = -(b["y"] * LDU_PER_LEVEL) - part_levels(part) * LDU_PER_LEVEL / 2.0
+        if str(b["part_id"]) in _BOTTOM_ORIGIN:
+            cy = -(b["y"] * LDU_PER_LEVEL)
+        else:
+            cy = -(b["y"] * LDU_PER_LEVEL) \
+                - part_levels(part) * LDU_PER_LEVEL / 2.0
         rot = b["rot"]
         if rot == 0:
             mat = "1 0 0 0 1 0 0 0 1"
@@ -432,6 +459,9 @@ class LDrawModel:
         out: dict[str, int] = {}
         for b in self.bricks:
             key = f"{b['part_id']}"
+            out[key] = out.get(key, 0) + 1
+        for e in self.extras:
+            key = f"{e['part_id']}"
             out[key] = out.get(key, 0) + 1
         return out
 

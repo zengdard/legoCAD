@@ -83,6 +83,7 @@ class BrickifyOptions:
     repair_gaps: bool = True     # plaques 4x4/2x4 pour les débords en coin
     tile_cap: bool = True        # finition : une plaque de tile sur chaque sommet
     round_parts: bool = True     # 1x1 isolés en pièces rondes (tourelles, merlons)
+    snot_banners: int = 0        # bannières SNOT sur les murs (0 = aucune)
     report_levels: bool = False
 
 
@@ -853,6 +854,10 @@ def _brickify_once(grid: VoxelGrid, name: str,
         model, slope_stats = slopes.apply(model)
 
     rounded = _roundify(model) if opts.round_parts else 0
+    snot_count = 0
+    if opts.snot_banners:
+        import snot
+        snot_count = snot.decorate_wall_banners(model, opts.snot_banners)
 
     # ordre de montage
     steps = build_order.plan(model, opts.max_parts_per_step) if opts.add_steps \
@@ -880,6 +885,8 @@ def _brickify_once(grid: VoxelGrid, name: str,
     report = {
         "status": "OK" if not missing and not build_errors else "INCOMPLETE",
         "pieces": len(model.bricks),
+        "snot_extras": len(model.extras),
+        "pieces_total": len(model.bricks) + len(model.extras),
         "types": len(model.parts_summary()),
         "voxels": len(voxels),
         "coverage": round(len(voxels & covered) / max(1, len(voxels)), 4),
@@ -895,6 +902,7 @@ def _brickify_once(grid: VoxelGrid, name: str,
         "single_stud": len(stab.get("single_stud", [])),
         "slopes": slope_stats.get("slopes", 0),
         "round_parts": rounded,
+        "snot_banners": snot_count,
         "repaired_gaps": repaired,
         "connectors": stab.get("families", {}).get("counts", {}),
         "bounds": model.bounds(),

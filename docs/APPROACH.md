@@ -136,11 +136,12 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
 
 ### P0 — la qualité de surface (fait en v2.1)
 
-- **Pentes** : `3040b`, `3039`, `3037`, `4286`, `3298` posées sur les marches
-  de 3 plaques (`tools/slopes.py`). Les tuiles sous la pente sont remplacées
+- **Pentes** : `3040b`, `3039`, `3037`, `4286`, `3298` sur les marches de
+  3 plaques, et **cheese slopes** `54200`/`85984`/`15068` sur les marches de
+  2 plaques (`tools/slopes.py`). Les tuiles sous la pente sont remplacées
   par des plaques pour que la pente soit réellement attachée. Les cheese
-  slopes 2 plaques (54200/85984/15068) sont identifiés et leur hauteur est
-  supportée, mais leur pose n'est pas encore validée au rendu : désactivées.
+  slopes ont une origine LDraw **en bas** : `_BOTTOM_ORIGIN` corrige l'export
+  (sans quoi elles flottent d'une plaque).
 - **Tiles** : une plaque de finition (`tile_cap`) couvre chaque sommet ;
   la surface est lisse, comme sur un set réel.
 - **Pièces 2D** : fondation 4×4/4×8 (`3031`/`3035`) et **plaque de base
@@ -156,9 +157,13 @@ Les exports sont : `.ldr` (Studio/LeoCAD), `bom.csv`, `bom.json`,
   les modules restants ont une page dédiée dans la notice
   (`tools/instructions.py`).
 - **SNOT / charnières** : les familles sont identifiées (`stud`, `snot`,
-  `axle`, `hinge`, `ball`) et signalées ; `tools/snot.py` est un **prototype
-  3D** (frames de connecteurs, headlight brick, export LDraw) qui valide la
-  connexion latérale. L'intégration au compilateur volumique reste à faire.
+  `axle`, `hinge`, `ball`). `tools/snot.py` est branché comme **couche de
+  décoration** : une brique de mur est remplacée par une **4070** (tenon
+  latéral), une plaque 1×2 verticale est attachée par ce tenon, avec matrice
+  complète, contrôle de collision, export LDraw et ligne de BOM
+  (`decorate_wall_banners`). Limite assumée : la structure porteuse reste la
+  grille verticale ; le SNOT ne porte pas encore de charge (pas de mur
+  entièrement en studs latéraux) et les charnières/axes ne sont pas générés.
 - **Vision** : `tools/depth_onnx.py` (Depth Anything V2 small, ONNX) produit
   une depth map réelle sans PyTorch ; `tools/depth_to_voxel.py` la transforme
   en relief 2.5D constructible. Un autre modèle se branche via `--depth-cmd`.

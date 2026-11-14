@@ -75,6 +75,14 @@ imprimable), `*.bom.csv`, `*.bom.json`, `*.wanted_list.xml`, `report.json`.
 3. une pièce n'est acceptée que si **au moins un de ses studs** repose sur
    une pièce déjà posée ; l'accolement latéral ne compte pas.
 
+**v2.5 — les deux verrous.** Les **cheese slopes 2 plaques** sont actives :
+la passe de pentes traite les marches de 2 plaques avec `54200`/`85984`/
+`15068`, et corrige l'origine LDraw de ces pièces (modélisées par le bas,
+elles flottaient d'une plaque). Le **SNOT** n'est plus un prototype : un
+décorateur attache de vraies bannières 1×2 verticales à des briques 4070
+(tenon latéral), avec matrice complète, contrôle de collision, export LDraw
+et ligne de BOM. `--no-snot` désactive la couche.
+
 **v2.4 — sets détaillés.** Le compilateur sait maintenant poser de vraies
 pièces de détail sur les débords :
 
@@ -91,6 +99,9 @@ pièces de détail sur les débords :
 - **pièces rondes** : un 1×1 isolé (merlon, tourelle, poteau) devient une
   pièce ronde réelle (`3062b`, `6141`, `98138`) — même empreinte, même
   hauteur, mais un crénelage et des tourelles qui ressemblent au jeu ;
+- **SNOT décoratif** : bannières suspendues par tenon latéral (4070 + plaque
+  1×2), sur les murs extérieurs du château ;
+- **cheese slopes** : pentes 31° de 2 plaques sur les petites marches ;
 - **formes enrichies** : château (enceinte, contreforts, mâchicoulis, tours
   rondes à toit conique, châtelet à trois tours, donjon à lanterne, cour
   vivante) et

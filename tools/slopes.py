@@ -88,7 +88,16 @@ def _origin(n, d, depth, width, perp_sign):
 
 
 def apply(model, max_slopes: int = 2000) -> tuple:
-    """Pose des pentes sur les marches de 3 plaques. Retourne (modèle, stats)."""
+    """Pose des pentes sur les marches de 2 ou 3 plaques.
+
+    - marche de 3 plaques : pentes 45/33 (`3040b`, `3039`, `3037`, `4286`,
+      `3298`), qui montent sur 3 plaques ;
+    - marche de 2 plaques : **cheese slopes** (`54200`, `85984`, `15068`),
+      hautes de 2 plaques. Leur face haute est contre la marche, la pente
+      descend vers l'extérieur ; la tuile du palier bas est remplacée par une
+      plaque pour que la pente soit réellement attachée.
+
+    Retourne (modèle, stats)."""
     tops = _tops(model)
     if not tops:
         return model, {"slopes": 0}
@@ -100,17 +109,20 @@ def apply(model, max_slopes: int = 2000) -> tuple:
         for d in ((0, -1), (0, 1), (-1, 0), (1, 0)):
             n = (cx + d[0], cz + d[1])
             level = tops.get(n)
-            # marches de 3 plaques uniquement : les cheese slopes 2 plaques
-            # demandent une orientation de pose spécifique, désactivées tant
-            # que leur géométrie n'est pas validée au rendu.
-            if level is None or high - level != 3:
+            if level is None:
                 continue
-            table = SLOPES
+            diff = high - level
+            # marche de 3 plaques (pente 45/33) ou de 2 plaques (cheese
+            # slope 31°), qui remplit exactement la marche.
+            if diff not in (2, 3):
+                continue
+            table = SLOPES if diff == 3 else SLOPES_2
             if any(c in used for c in _footprint(n, d, 2, 1, 1)):
                 continue
             # choisit la plus grande pente qui tient sur le palier
             chosen = None
-            sizes = ((3, 2), (3, 1), (2, 4), (2, 2), (2, 1))
+            sizes = ((3, 2), (3, 1), (2, 4), (2, 2), (2, 1)) \
+                if diff == 3 else ((2, 2), (2, 1), (1, 1))
             for depth, width in sizes:
                 if (depth, width) not in table:
                     continue
@@ -154,4 +166,30 @@ def apply(model, max_slopes: int = 2000) -> tuple:
                 used |= cells
                 placed += 1
                 break                    # une pente par marche
+
+    # Les grandes cheese slopes ne couvrent pas toujours toute la marche :
+    # on complète les cellules restantes avec des 1x1 (54200), sinon il
+    # reste une petite marche verticale au milieu du pan.
+    for (cx, cz), high in sorted(tops.items()):
+        if placed >= max_slopes:
+            break
+        for d in ((0, -1), (0, 1), (-1, 0), (1, 0)):
+            n = (cx + d[0], cz + d[1])
+            level = tops.get(n)
+            if level is None or high - level != 2 or n in used:
+                continue
+            below = model._occupied.get((n[0], level - 1, n[1]))
+            if below is None:
+                continue
+            b = model.bricks[below]
+            plate = TILE_TO_PLATE.get(str(b["part_id"]))
+            if plate:
+                model.remove(below)
+                model.place(plate, b["x"], b["z"], b["y"], b["color"],
+                            b["rot"])
+            rot = _ROT[d]
+            if model.try_place("54200", n[0], n[1], level,
+                               _color_above(model, cx, cz, high), rot):
+                used.add(n)
+                placed += 1
     return model, {"slopes": placed, "added": placed}

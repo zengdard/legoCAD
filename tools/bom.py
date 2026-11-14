@@ -66,6 +66,11 @@ def build(model) -> list[BomRow]:
         counts[key] = counts.get(key, 0) + 1
         if key[0] not in info:
             info[key[0]] = model.part(key[0])
+    for e in getattr(model, "extras", []):
+        key = (str(e["part_id"]), str(e["color"]))
+        counts[key] = counts.get(key, 0) + 1
+        if key[0] not in info:
+            info[key[0]] = model.part(key[0])
     rows = []
     for (pid, color), n in counts.items():
         p = info[pid]

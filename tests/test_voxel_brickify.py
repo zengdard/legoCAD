@@ -159,6 +159,25 @@ def test_fondation_4x4_2d():
     assert rep["islands"] == 1
 
 
+def test_cheese_slope_sur_marche_de_deux_plaques():
+    """Les pentes 2 plaques (31°) remplissent une marche de 2 plaques et
+    leur origine LDraw est en bas (pas de flottement d'une plaque)."""
+    g = voxel.VoxelGrid()
+    g.box(0, 0, 0, 6, 2, 6, "71")
+    g.box(0, 2, 0, 6, 2, 3, "71")
+    model, rep = brickify.brickify(g, "marche")
+    slopes = [b for b in model.bricks
+              if b["part_id"] in ("54200", "85984", "15068")]
+    assert rep["slopes"] >= 1
+    assert slopes
+    b = slopes[0]
+    lines = [ln for ln in model.to_ldraw().splitlines()
+             if f"{b['part_id']}.dat" in ln
+             and abs(float(ln.split()[3]) + b["y"] * 8) < 0.01]
+    # origine en bas : y LDraw = -niveau × 8 (pas -niveau×8 - 8)
+    assert lines
+
+
 def test_plaque_de_base_32x32():
     model, rep = _box(32, 3, 32)
     assert any(b["part_id"] == "3811" for b in model.bricks)
@@ -193,6 +212,32 @@ def test_1x1_isoles_deviennent_ronds():
     assert any(b["part_id"] in ("3062b", "6141", "98138")
                for b in model.bricks)
     assert rep["coverage"] == 1.0
+
+
+def test_banniere_snot_tenue_par_un_tenon_lateral():
+    """Un mur d'un stud reçoit une bannière 1x2 verticale, tenue par le
+    tenon latéral d'une brique 4070 (aucun appui vertical)."""
+    g = voxel.VoxelGrid().box(0, 0, 0, 8, 12, 1, "71")
+    opts = brickify.BrickifyOptions(snot_banners=2, foundation=False)
+    model, rep = brickify.brickify(g, "mur", opts)
+    assert rep["snot_banners"] == 2
+    assert len(model.extras) == 2
+    assert sum(1 for b in model.bricks if b["part_id"] == "4070") == 2
+    assert model.parts_summary().get("3023", 0) == 2
+    ldr = model.to_ldraw()
+    assert "3023.dat" in ldr
+    # la plaque a une matrice complète (pas une simple rotation 0/90)
+    extra_lines = [ln for ln in ldr.splitlines() if "3023.dat" in ln]
+    assert extra_lines and extra_lines[0].split()[5] != "1"
+
+
+def test_banniere_snot_est_dans_le_bom():
+    import bom
+    g = voxel.VoxelGrid().box(0, 0, 0, 8, 12, 1, "71")
+    model, _ = brickify.brickify(
+        g, "mur", brickify.BrickifyOptions(snot_banners=2, foundation=False))
+    rows = bom.build(model)
+    assert any(r.part_id == "3023" and r.count == 2 for r in rows)
 
 
 def test_render_aplatit_les_etapes(tmp_path):
