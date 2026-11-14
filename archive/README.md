@@ -31,7 +31,19 @@ PYTHONPATH=tools:archive/v1/tools python3 -m pytest archive/v1/tests -q
 ```
 
 `generate_template.py`, `generate_script.py` et `generate.py` nécessitent
-une clé `DEEPSEEK_API_KEY`.
+une clé `DEEPSEEK_API_KEY`. Le solver CP-SAT nécessite `pip install ortools`
+(optionnel, commenté dans `requirements.txt`).
+
+Certains anciens modèles se **recompilent** avec le pipeline v2, par exemple
+`house.ldr` (339 pièces) ou `cabane_solver.ldr` (207 pièces) :
+
+```bash
+python3 tools/make_model.py --ldr archive/models/house.ldr \
+  --name maison_v1 --no-notice
+```
+
+D'autres (`chateau_llm.ldr`) restent des pièces d'archive : leur volume
+produit plusieurs amas, ce que la v2 signale au lieu de le masquer.
 
 ### Documentation d'origine (extraite du README)
 
