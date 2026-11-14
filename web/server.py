@@ -53,6 +53,8 @@ EXAMPLES = [
      "desc": "Gris/bleu, verrière jaune, réacteurs", "width": None},
     {"id": "castle", "label": "Château fort",
      "desc": "Enceinte, tours, donjon, porte, douve", "width": 26},
+    {"id": "diorama", "label": "Village (diorama)",
+     "desc": "Deux maisons, place, étang, arbres, personnages", "width": 32},
     {"id": "brick", "label": "Brique géante", "desc": "Le test minimal",
      "width": 4},
 ]

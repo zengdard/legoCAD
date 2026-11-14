@@ -10,6 +10,9 @@
   > 40 %, tuiles > 50 %, composants > 10, plancher 400, socle vide.
 - **Variété** (`quality.variety`) : types, entropie, part du type dominant.
 - `quality.validity` accepte `max_components` (préparation des scènes).
+- **Village (diorama)** : 1 279 pièces, deux cottages, place, étang,
+  marché, arbres, personnages brick-built, mur de fond crénelé ; 8 vues
+  et notice. Un « Set » 400–4 000 pièces sur plaque de base.
 
 ## 2026-11-14 — remaniement
 

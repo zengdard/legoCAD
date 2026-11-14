@@ -73,7 +73,14 @@ def design_flags(model, report: dict | None = None) -> list[dict]:
         xs = [b["x"] for b in bricks]
         zs = [b["z"] for b in bricks]
         area = (max(xs) - min(xs) + 1) * (max(zs) - min(zs) + 1)
-        ground = {(b["x"], b["z"]) for b in bricks if b["y"] == 0}
+        ground = set()
+        for b in bricks:
+            if b["y"] != 0:
+                continue
+            sx, sz = model._footprint(model.part(b["part_id"]), b["rot"])
+            for dx in range(sx):
+                for dz in range(sz):
+                    ground.add((b["x"] + dx, b["z"] + dz))
         if area and 1 - len(ground) / area > 0.50:
             add("socle_vide",
                 f"{1 - len(ground) / area:.0%} de l'empreinte sans pièce au sol")

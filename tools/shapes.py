@@ -577,6 +577,118 @@ def _castle_crenellate(g: VoxelGrid, x: int, z: int, w: int, d: int,
         g.box(x + w - 1, y, z + j, 1, 3, 1, color)
 
 
+def _cottage(g: VoxelGrid, x: int, z: int, w: int, d: int, wall: str,
+             roof: str) -> None:
+    """Petite maison de scène : murs pleins, porte, fenêtres, toit à pans."""
+    h = 9
+    g.box(x, 3, z, w, h, d, wall)
+    g.paint_box(x, 3, z, w, 2, d, DGRAY)
+    dx = x + w // 2 - 1
+    g.paint_box(dx - 1, 3, z, 4, 7, 1, "0")
+    g.paint_box(dx, 3, z, 2, 6, 1, BROWN)
+    g.paint_box(dx, 5, z, 1, 1, 1, YELLOW)
+    for wx in (x + 2, x + w - 4):
+        for wz, face in ((z, z), (z + d - 1, z + d - 1)):
+            g.paint_box(wx - 1, 5, face, 4, 4, 1, "0")
+            g.paint_box(wx, 6, face, 2, 3, 1, LBLUE)
+    # toit à deux pans, marches de 3 plaques
+    y = 3 + h
+    step = 0
+    while d - 4 * step >= 2:
+        g.box(x, y, z + 2 * step, w, 3, d - 4 * step, roof)
+        g.paint_box(x, y, z + 2 * step, 1, 3, d - 4 * step, wall)
+        g.paint_box(x + w - 1, y, z + 2 * step, 1, 3, d - 4 * step, wall)
+        y += 3
+        step += 1
+    g.box(x, y, z + d // 2 - 1, w, 1, 2, "0")
+    # cheminée
+    cx = x + w - 3
+    g.box(cx, 3 + h - 2, z + 2, 2, 10, 2, DGRAY)
+    g.box(cx - 1, 3 + h + 8, z + 1, 3, 1, 3, "0")
+
+
+def _figure(g: VoxelGrid, x: int, z: int, torso: str, hair: str) -> None:
+    """Personnage brick-built simple (2×2) : jambes, torse, tête, cheveux."""
+    g.box(x, 3, z, 2, 3, 2, "0")
+    g.box(x, 6, z, 2, 3, 2, torso)
+    g.box(x, 9, z, 2, 3, 2, YELLOW)
+    g.box(x, 12, z, 2, 1, 2, hair)
+    g.paint_box(x, 10, z, 1, 1, 1, "0")
+    g.paint_box(x + 1, 10, z, 1, 1, 1, "0")
+
+
+def diorama(size: int = 32) -> VoxelGrid:
+    """Scène de village : deux maisons, place, étang, arbres, personnages.
+
+    C'est le mode « Set » de BrickBench : un **diorama** sur plaque de base,
+    avec un sol qui raconte le lieu, des volumes secondaires (maisons),
+    des props et des figures. Tout repose sur la plaque, donc le modèle
+    reste un seul composant soulevable.
+    """
+    g = VoxelGrid()
+    g.box(0, 0, 0, size, 3, size, GREEN)          # plaque de base + sol
+    g.paint_box(0, 2, 0, size, 1, 1, DGRAY)       # bord avant
+    g.paint_box(0, 2, size - 1, size, 1, 1, DGRAY)
+    # chemin de terre et place pavée
+    g.paint_box(14, 2, 0, 4, 1, size, "19")
+    g.paint_box(2, 2, 10, 28, 1, 8, "19")
+    g.paint_box(4, 2, 2, 3, 1, 8, "19")
+    g.paint_box(23, 2, 2, 3, 1, 8, "19")
+    # deux cottages
+    _cottage(g, 2, 2, 10, 7, TAN, DARKRED)
+    _cottage(g, 20, 2, 9, 7, WHITE, DARKBLUE)
+    # étang avec margelle et jet d'eau
+    g.paint_box(20, 2, 21, 7, 1, 7, DGRAY)
+    g.paint_box(21, 2, 22, 5, 1, 5, LBLUE)
+    g.box(22, 3, 24, 2, 3, 2, DGRAY)
+    g.box(23, 6, 24, 1, 3, 1, LBLUE)
+    # arbres
+    for (tx, tz) in ((2, 23), (9, 27)):
+        g.box(tx, 3, tz, 2, 6, 2, BROWN)
+        g.ellipsoid(tx + 0.5, 11, tz + 0.5, 2.4, 2.4, 2.4, DARKGREEN)
+        g.ellipsoid(tx + 0.5, 12, tz + 0.5, 1.6, 1.6, 1.6, GREEN)
+    # étal de marché, caisses, tonneaux
+    g.box(24, 3, 13, 3, 1, 2, BROWN)
+    for (mx, mz) in ((24, 13), (26, 13), (24, 14), (26, 14)):
+        g.box(mx, 4, mz, 1, 4, 1, BROWN)
+    g.box(24, 8, 13, 3, 1, 2, RED)
+    for (bx, bz) in ((30, 16), (30, 18)):
+        g.box(bx, 3, bz, 2, 3, 2, BROWN)
+        g.paint_box(bx, 4, bz, 2, 1, 2, DGRAY)
+    # personnages (deux sur le chemin, un près de l'étang)
+    _figure(g, 15, 9, RED, BROWN)
+    _figure(g, 17, 14, BLUE, YELLOW)
+    _figure(g, 19, 27, GREEN, "0")
+    # mur de fond : le diorama a une face ouverte et un fond bâti
+    g.box(0, 3, size - 1, size, 6, 1, LGRAY)
+    g.paint_box(0, 3, size - 1, size, 2, 1, DGRAY)
+    g.paint_box(14, 3, size - 1, 4, 5, 1, BROWN)   # porte de ville
+    for x in range(0, size, 2):
+        g.box(x, 9, size - 1, 1, 3, 1, LGRAY)      # merlons
+    # haie et fleurs devant le mur
+    for x in range(2, size - 2, 3):
+        g.box(x, 3, size - 2, 2, 2, 1, DARKGREEN)
+        g.paint_box(x, 4, size - 2, 1, 1, 1, RED)
+    # lampadaires le long du chemin
+    for (lx, lz) in ((12, 6), (18, 7), (12, 20), (18, 21)):
+        g.box(lx, 3, lz, 1, 6, 1, "0")
+        g.box(lx, 9, lz, 1, 1, 1, YELLOW)
+    # jardinières sous les fenêtres des cottages
+    for (fx, fz) in ((4, 1), (8, 1), (22, 1), (26, 1)):
+        g.box(fx, 3, fz, 3, 1, 1, BROWN)
+        g.paint_box(fx, 4, fz, 3, 1, 1, RED)
+        g.paint_box(fx + 1, 4, fz, 1, 1, 1, YELLOW)
+    # charrette près de l'étal
+    g.box(28, 3, 12, 3, 1, 2, BROWN)
+    for (wx, wz) in ((28, 12), (30, 12), (28, 13), (30, 13)):
+        g.box(wx, 2, wz, 1, 1, 1, "0")
+    # le mur de fond passe en z=0 : la face ouverte regarde la caméra
+    # par défaut (z=max), comme un diorama.
+    g = VoxelGrid({(x, y, size - 1 - z): c
+                   for (x, y, z), c in g.cells.items()})
+    return g.normalize()
+
+
 def brick(width: int = 4, depth: int = 2) -> VoxelGrid:
     """Une brique géante (démo minimale)."""
     return VoxelGrid().box(0, 0, 0, width, 3, depth, RED)
@@ -618,6 +730,7 @@ SHAPES = {
     "tree": tree,
     "brick": brick,
     "castle": castle,
+    "diorama": diorama,
     "spaceship": spaceship,
     "mosaic": mosaic,
 }

@@ -13,7 +13,7 @@ maintenu.
 
 La validité suit le contrat de **BrickBench** (brickben.ch, 2026) : pièces
 réelles, zéro collision, zéro pièce flottante, **un seul composant**, stable.
-Le benchmark local (`tools/bench.py`) donne **8/8 formes valides** à 100 %
+Le benchmark local (`tools/bench.py`) donne **9/9 formes valides** à 100 %
 de couverture en moins de 0,5 s par modèle (2,2 s pour le château de
 3 662 pièces).
 
@@ -39,6 +39,7 @@ pip install -r requirements.txt
 
 # formes prêtes à l'emploi (sans LLM, sans réseau)
 python3 tools/make_model.py --shape house --name maison
+python3 tools/make_model.py --shape diorama --name village --views
 python3 tools/make_model.py --shape rocket --name fusee --video
 
 # importer un modèle existant ou une image
@@ -50,7 +51,8 @@ python3 tools/depth_onnx.py photo.jpg depth.png
 python3 tools/depth_to_voxel.py --depth depth.png --color photo.jpg \
   --width 32 --out models/relief.vox.json
 python3 tools/make_model.py --vox models/relief.vox.json --name relief
-python3 tools/make_model.py --shape house --name maison --pdf --rebrickable
+python3 tools/make_model.py --shape house --name maison
+python3 tools/make_model.py --shape diorama --name village --views --pdf --rebrickable
 
 # texte -> volume -> briques (nécessite une clé LLM)
 export DEEPSEEK_API_KEY=sk-...
@@ -150,7 +152,7 @@ le seul `pieces_catalog.json` (et Pillow pour les images).
 | `tools/make_model.py` | CLI : forme/volume/.ldr/image → tous les livrables |
 | `tools/text_to_voxel.py` | texte → programme de volume (LLM) → volume, avec bac à sable |
 | `tools/voxel_runner.py` | exécution bornée du script de volume |
-| `tools/shapes.py` | formes procédurales : maison, fusée, vaisseau Classic Space, château fort, canard (mosaïque), voiture, sapin, brique, mosaïque |
+| `tools/shapes.py` | formes procédurales : maison, village (diorama), château fort, fusée, vaisseau Classic Space, canard (mosaïque), voiture, sapin, brique, mosaïque |
 | `tools/quality.py` | score multi-critères et contrôles |
 | `tools/availability.py` | calibration de la disponibilité sur le corpus OMR |
 | `tools/fetch_omr.py` | téléchargement reproductible d'un échantillon OMR |
@@ -328,7 +330,8 @@ est déjà repris :
 
 ```bash
 python3 tools/views.py --ldr out/web/chateau/chateau.ldr --out out/web/chateau/views
-python3 tools/make_model.py --shape house --name maison --views
+python3 tools/make_model.py --shape house --name maison
+python3 tools/make_model.py --shape diorama --name village --views --views
 # -> views/contact.png, views/views.json, 8 PNG
 ```
 
