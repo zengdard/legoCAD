@@ -396,14 +396,14 @@ def castle(size: int = 32, wall_h: int = 12, color: str = LGRAY,
 
     # ---- porte, pont-levis, bannières ---------------------------------- #
     gate_x = size // 2 - 2
-    g.paint_box(gate_x - 2, 3, z0, 8, 9, 1, "0")
-    g.paint_box(gate_x - 1, 3, z0, 6, 8, 1, stone)
-    g.paint_box(gate_x, 3, z0, 4, 7, 1, BROWN)
-    g.paint_box(gate_x + 1, 4, z0, 1, 6, 1, "0")
-    g.paint_box(gate_x, 3, z0, 4, 1, 1, "0")
-    g.box(gate_x, 2, 0, 4, 1, z0, BROWN)              # tablier jusqu'au bord
-    for cx in (gate_x, gate_x + 3):
-        g.box(cx, 3, 0, 1, 6, 1, "0")                  # chaînes
+    g.paint_box(gate_x - 2, 3, z0, 9, 11, 1, "0")
+    g.paint_box(gate_x - 1, 3, z0, 7, 10, 1, stone)
+    g.paint_box(gate_x, 3, z0, 5, 9, 1, BROWN)
+    g.paint_box(gate_x + 2, 4, z0, 1, 8, 1, "0")
+    g.paint_box(gate_x, 3, z0, 5, 1, 1, "0")
+    g.box(gate_x, 2, 0, 5, 1, z0, BROWN)              # tablier jusqu'au bord
+    for cx in (gate_x, gate_x + 4):
+        g.box(cx, 3, 0, 1, 7, 1, "0")                  # chaînes
     for bx in (gate_x - 2, gate_x + 6):
         g.paint_box(bx, 4, z0, 3, 7, 1, DARKRED)
         g.paint_box(bx, 8, z0, 3, 2, 1, YELLOW)
@@ -433,10 +433,16 @@ def castle(size: int = 32, wall_h: int = 12, color: str = LGRAY,
     for tx in (gate_x - 5, gate_x + 5):
         g.box(tx, 3, 0, 5, gate_top - 3, 5, color)
         g.paint_box(tx, band, 0, 5, 1, 5, stone)
-        _castle_crenellate(g, tx, 0, 5, 5, gate_top, color)
         for (wx, wz) in ((tx + 1, 0), (tx + 3, 0), (tx, 2), (tx + 4, 2)):
             g.paint_box(wx, 8, wz, 1, 4, 1, "0")
             g.paint_box(wx, 8, wz, 1, 1, 1, LBLUE)
+        # toit pyramidal et pennon : châtelet à trois tours
+        py = gate_top
+        for s_, yy in ((5, py), (3, py + 3), (1, py + 6)):
+            g.box(tx + (5 - s_) // 2, yy, (5 - s_) // 2,
+                  s_, 3, s_, roof)
+        g.box(tx + 2, py + 9, 2, 1, 3, 1, YELLOW)
+        _castle_flag(g, tx + 2, py + 12, 2, DARKBLUE, WHITE, scale=1)
 
     # tour centrale du châtelet, au-dessus de la porte
     gt = gate_top
@@ -445,8 +451,13 @@ def castle(size: int = 32, wall_h: int = 12, color: str = LGRAY,
     g.paint_box(gate_x + 1, 4, 0, 3, 7, 1, DARKRED)     # bannière
     g.paint_box(gate_x + 2, 8, 0, 1, 3, 1, YELLOW)
     g.box(gate_x - 1, gt, 0, 7, 3, 5, color)            # mâchicoulis plein
-    _castle_crenellate(g, gate_x - 1, 0, 7, 5, gt + 3, color)
-    _castle_flag(g, gate_x + 2, gt + 3, 0, RED, YELLOW, scale=1)
+    # toit pyramidal bleu : le châtelet devient une silhouette à trois tours
+    py = gt + 3
+    for s_, yy in ((5, py), (3, py + 3), (1, py + 6)):
+        g.box(gate_x - 1 + (5 - s_) // 2, yy, 1 + (5 - s_) // 2,
+              s_, 3, s_, roof)
+    g.box(gate_x + 1, py + 9, 3, 1, 3, 1, YELLOW)
+    _castle_flag(g, gate_x + 1, py + 12, 3, RED, YELLOW, scale=1)
 
     # ---- donjon -------------------------------------------------------- #
     kx = x0 + (span - 9) // 2

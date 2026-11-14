@@ -185,6 +185,16 @@ def test_debord_de_tour_couvert_par_un_corbeau():
     assert rep["islands"] == 1
 
 
+def test_1x1_isoles_deviennent_ronds():
+    g = voxel.VoxelGrid().box(0, 0, 0, 3, 3, 1, "71")
+    g.box(1, 3, 0, 1, 3, 1, "71")          # colonne 1x1 isolée
+    model, rep = brickify.brickify(g, "merlon")
+    assert rep["round_parts"] >= 2
+    assert any(b["part_id"] in ("3062b", "6141", "98138")
+               for b in model.bricks)
+    assert rep["coverage"] == 1.0
+
+
 def test_render_aplatit_les_etapes(tmp_path):
     import render
     model, _ = _box(6, 3, 6)

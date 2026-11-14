@@ -82,6 +82,7 @@ class BrickifyOptions:
     baseplate: bool = True       # plaque de base 32x32 si l'empreinte le permet
     repair_gaps: bool = True     # plaques 4x4/2x4 pour les débords en coin
     tile_cap: bool = True        # finition : une plaque de tile sur chaque sommet
+    round_parts: bool = True     # 1x1 isolés en pièces rondes (tourelles, merlons)
     report_levels: bool = False
 
 
@@ -686,6 +687,34 @@ def _tile_layer(model: LDrawModel, cells: set, colors: dict, y: int, h: int,
     return placed, gaps
 
 
+# Pièces 1×1 carrées -> équivalent rond (même empreinte, même hauteur).
+_ROUND = {"3005": "3062b", "3024": "6141", "3070b": "98138"}
+
+
+def _roundify(model: LDrawModel) -> int:
+    """Remplace les 1×1 **isolés** par des pièces rondes.
+
+    Une colonne de 1×1 dont les quatre voisins latéraux sont vides (merlon,
+    tourelle, poteau, cheminée) est bien plus juste en pièce ronde : c'est
+    exactement ce que font les sets réels pour les crénelages et les
+    tourelles. L'empreinte et la hauteur sont identiques, donc la structure
+    et la stabilité ne changent pas — seul le rendu gagne en détail.
+    """
+    occ = model._occupied
+    count = 0
+    for b in model.bricks:
+        pid = _ROUND.get(b["part_id"])
+        if not pid or b.get("rot", 0) not in (0, 90, 180, 270):
+            continue
+        x, z, y = b["x"], b["z"], b["y"]
+        neighbours = ((x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1))
+        if any((nx, y, nz) in occ for (nx, nz) in neighbours):
+            continue
+        b["part_id"] = pid
+        count += 1
+    return count
+
+
 def _is_top(cells, y: int, h: int, grid_cells: set) -> bool:
     return all((c[0], y + h, c[1]) not in grid_cells for c in cells)
 
@@ -823,6 +852,8 @@ def _brickify_once(grid: VoxelGrid, name: str,
         import slopes
         model, slope_stats = slopes.apply(model)
 
+    rounded = _roundify(model) if opts.round_parts else 0
+
     # ordre de montage
     steps = build_order.plan(model, opts.max_parts_per_step) if opts.add_steps \
         else []
@@ -863,6 +894,7 @@ def _brickify_once(grid: VoxelGrid, name: str,
         "tipping_joints": stab.get("tipping_joints", []),
         "single_stud": len(stab.get("single_stud", [])),
         "slopes": slope_stats.get("slopes", 0),
+        "round_parts": rounded,
         "repaired_gaps": repaired,
         "connectors": stab.get("families", {}).get("counts", {}),
         "bounds": model.bounds(),

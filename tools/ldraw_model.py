@@ -36,7 +36,8 @@ _sys_path_added = False
 
 # Quelques pièces dont la hauteur réelle diffère de la famille LDraw
 # (les « cheese slopes » 2/3 de brique font 2 plaques, pas 3).
-_PART_LEVELS = {"54200": 2, "85984": 2, "15068": 2}
+_PART_LEVELS = {"54200": 2, "85984": 2, "15068": 2,
+                "6141": 1, "98138": 1, "4073": 1}
 
 
 def part_levels(part: dict) -> int:

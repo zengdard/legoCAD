@@ -15,7 +15,8 @@ Deux pipelines coexistent :
 La validité suit le contrat de **BrickBench** (brickben.ch, 2026) : pièces
 réelles, zéro collision, zéro pièce flottante, **un seul composant**, stable.
 Le benchmark local (`tools/bench.py`) donne **8/8 formes valides** à 100 %
-de couverture en moins de 0,5 s par modèle (3 s pour le château).
+de couverture en moins de 0,5 s par modèle (2,2 s pour le château de
+3 662 pièces).
 
 ```
  forme / texte / image / .ldr
@@ -87,8 +88,12 @@ pièces de détail sur les débords :
 - **re-pavage local** (`_repair_gaps`) quand aucune pièce ne peut enjamber :
   les pièces du niveau autour du trou sont retirées puis re-pavées, avec
   restauration si le pavage échoue ;
+- **pièces rondes** : un 1×1 isolé (merlon, tourelle, poteau) devient une
+  pièce ronde réelle (`3062b`, `6141`, `98138`) — même empreinte, même
+  hauteur, mais un crénelage et des tourelles qui ressemblent au jeu ;
 - **formes enrichies** : château (enceinte, contreforts, mâchicoulis, tours
-  rondes à toit conique, châtelet, donjon à lanterne, cour vivante) et
+  rondes à toit conique, châtelet à trois tours, donjon à lanterne, cour
+  vivante) et
   maison (colombages, fenêtres à volets, porche, cheminée, haie fleurie,
   jardin arboré) ; voiture et vaisseau ont reçu phares, galerie, bandes et
   trains d'atterrissage ;
