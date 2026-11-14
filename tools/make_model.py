@@ -114,8 +114,12 @@ def run(args) -> dict:
         try:
             import render as rend
             png = out / "preview.png"
+            # la caméra par défaut doit montrer la façade principale
+            cam = {"castle": (22, 168), "house": (20, 200),
+                   "car": (18, 210), "spaceship": (26, 210)}.get(
+                       getattr(args, "shape", None), (30, 42))
             rend.render_image(ldr, png, width=1100, height=820,
-                              lat=30, lon=42)
+                              lat=cam[0], lon=cam[1])
             preview = png
             print(f"[rendu] {preview}", flush=True)
         except Exception as exc:                     # LeoCAD absent/erreur
